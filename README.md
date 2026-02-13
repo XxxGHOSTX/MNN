@@ -14,7 +14,7 @@ psql -f sql/relational_buffer_schema.sql
 ```
 
 ## C++ MNN core
-The C++ implementation under `include/mnn_core.hpp` and `src/mnn_core.cpp` provides first-principles tensor math, broadcasting, and the Geometric Character Embedding used by the 200M+ parameter Matrix Neural Network.
+The C++ implementation under `include/mnn_core.hpp` and `src/mnn_core.cpp` provides first principles tensor math, broadcasting, and the Geometric Character Embedding used by the 200M+ parameter Matrix Neural Network.
 
 Build a quick sanity check:
 ```bash

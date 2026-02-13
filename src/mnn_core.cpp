@@ -12,6 +12,14 @@ namespace {
 
 using mnn::Shape;
 
+#ifdef M_PI
+constexpr double kPi = M_PI;
+#else
+constexpr double kPi = 3.14159265358979323846;
+#endif
+constexpr std::size_t kCharacterModulus = 31;
+constexpr double kHarmonicFrequency = 0.017;
+
 std::size_t compute_size(const Shape &shape) {
     if (shape.empty()) {
         return 0;
@@ -221,15 +229,17 @@ Tensor GeometricCharacterEmbedding::encode(const std::string &text) const {
     if (text.empty()) {
         return out;
     }
-    constexpr double pi = 3.14159265358979323846;
     for (std::size_t i = 0; i < text.size(); ++i) {
         const auto code = static_cast<unsigned char>(text[i]);
-        const double radius = 1.0 + (static_cast<double>(code % 31) / 31.0) * curvature_;
+        const double radius =
+            1.0 + (static_cast<double>(code % kCharacterModulus) /
+                   static_cast<double>(kCharacterModulus)) *
+                      curvature_;
         for (std::size_t j = 0; j < embedding_dim_; ++j) {
             const double phase = static_cast<double>(j) / static_cast<double>(embedding_dim_);
-            const double angle = radius * 0.25 * static_cast<double>(i + 1) + phase * pi;
+            const double angle = radius * 0.25 * static_cast<double>(i + 1) + phase * kPi;
             const double geom = std::sin(angle) + std::cos(angle * 0.5);
-            const double harmonic = std::sin((code + j) * 0.017);
+            const double harmonic = std::sin((code + j) * kHarmonicFrequency);
             out.data()[i * embedding_dim_ + j] = radius * geom + harmonic;
         }
     }
