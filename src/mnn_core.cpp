@@ -17,7 +17,7 @@ constexpr double kPi = M_PI;
 #else
 constexpr double kPi = 3.14159265358979323846;
 #endif
-// Normalizes character codes into a bounded radial factor so nearby codes share a manifold slice.
+// Normalizes character codes into a bounded radial factor (31 is a small prime to spread ASCII codes evenly).
 constexpr std::size_t kCharacterModulus = 31;
 // Small harmonic offset to decorrelate adjacent characters along the manifold.
 constexpr double kHarmonicFrequency = 0.017;
