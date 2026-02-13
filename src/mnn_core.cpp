@@ -17,12 +17,14 @@ constexpr double kPi = M_PI;
 #else
 constexpr double kPi = 3.14159265358979323846;
 #endif
-// Normalizes character codes into a bounded radial factor (31 is a small prime to spread ASCII codes evenly).
+// Normalizes character codes into a bounded radial factor; 31 is prime to avoid repeating patterns across ASCII buckets.
 constexpr std::size_t kCharacterModulus = 31;
 // Small harmonic offset to decorrelate adjacent characters along the manifold.
 constexpr double kHarmonicFrequency = 0.017;
 // Controls the spiral pitch that spreads characters across the manifold with depth.
 constexpr double kAngleScalingFactor = 0.25;
+// Dampens the cosine branch to keep oscillations stable across the manifold.
+constexpr double kHalfAngleCompression = 0.5;
 
 std::size_t compute_size(const Shape &shape) {
     if (shape.empty()) {
@@ -235,15 +237,15 @@ Tensor GeometricCharacterEmbedding::encode(const std::string &text) const {
     }
     for (std::size_t i = 0; i < text.size(); ++i) {
         const auto code = static_cast<unsigned char>(text[i]);
-        const double radius =
-            1.0 + (static_cast<double>(code % kCharacterModulus) /
-                   static_cast<double>(kCharacterModulus)) *
-                      curvature_;
+        const double normalized_code =
+            static_cast<double>(code % kCharacterModulus) /
+            static_cast<double>(kCharacterModulus);
+        const double radius = 1.0 + normalized_code * curvature_;
         for (std::size_t j = 0; j < embedding_dim_; ++j) {
             const double phase = static_cast<double>(j) / static_cast<double>(embedding_dim_);
             const double angle =
                 radius * kAngleScalingFactor * static_cast<double>(i + 1) + phase * kPi;
-            const double geom = std::sin(angle) + std::cos(angle * 0.5);
+            const double geom = std::sin(angle) + std::cos(angle * kHalfAngleCompression);
             const double harmonic = std::sin((code + j) * kHarmonicFrequency);
             out.data()[i * embedding_dim_ + j] = radius * geom + harmonic;
         }
