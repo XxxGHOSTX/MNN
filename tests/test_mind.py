@@ -96,6 +96,18 @@ class TestSemanticSieve(unittest.TestCase):
         self.assertIsInstance(is_valid, bool)
         self.assertIsInstance(confidence, float)
     
+    def test_threshold_enforcement(self):
+        """Ensure higher thresholds discard more permutations."""
+        text = "th"  # produces a moderate score via common bigram
+        low_threshold_sieve = SemanticSieve(noise_threshold=0.1)
+        high_threshold_sieve = SemanticSieve(noise_threshold=0.2)
+        
+        is_valid_low, _ = low_threshold_sieve.filter(text)
+        is_valid_high, _ = high_threshold_sieve.filter(text)
+        
+        self.assertTrue(is_valid_low)
+        self.assertFalse(is_valid_high)
+    
     def test_filter_empty_text(self):
         """Test filtering of empty/short text."""
         is_valid, confidence = self.sieve.filter("a")
