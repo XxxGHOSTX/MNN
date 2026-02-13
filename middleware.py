@@ -102,7 +102,7 @@ class ThalosBridge:
                 if min_severity not in SEVERITY_LEVELS:
                     raise ValueError(f"Invalid severity '{min_severity}'. Expected one of {SEVERITY_LEVELS}.")
                 min_idx = SEVERITY_LEVELS.index(min_severity)
-                allowed_levels = SEVERITY_LEVELS[min_idx:]
+                allowed_levels = list(SEVERITY_LEVELS[min_idx:])
                 cur.execute(
                     """
                     SELECT id, logged_at, severity, message, context, coordinate_ref

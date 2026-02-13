@@ -27,6 +27,11 @@ class WeightEncryptor:
     """
 
     def __init__(self, iterations: int = 200_000):
+        """
+        :param iterations: PBKDF2 iteration count used to derive the AES key from the hardware
+            fingerprint. Increasing hardens brute-force resistance at the cost of CPU time; decreasing
+            reduces security.
+        """
         self.iterations = iterations
 
     def hardware_fingerprint(self) -> str:
