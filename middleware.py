@@ -19,6 +19,10 @@ class ThalosBridge:
     def __init__(self, dsn: Optional[str] = None):
         self.dsn = dsn or DEFAULT_DSN
 
+    @staticmethod
+    def _resolve_aad(model_name: str, associated_data: Optional[bytes]) -> bytes:
+        return associated_data if associated_data is not None else model_name.encode("utf-8")
+
     @contextmanager
     def connection(self):
         conn = psycopg2.connect(self.dsn)
@@ -129,7 +133,7 @@ class ThalosBridge:
         associated_data: Optional[bytes] = None,
     ) -> int:
         encryptor = WeightEncryptor()
-        aad = associated_data or model_name.encode("utf-8")
+        aad = self._resolve_aad(model_name, associated_data)
         payload = encryptor.encrypt(weights, associated_data=aad)
         with self.connection() as conn, conn.cursor() as cur:
             cur.execute(
@@ -180,5 +184,5 @@ class ThalosBridge:
                 checksum=row["checksum"],
             )
             encryptor = WeightEncryptor()
-            aad = associated_data or model_name.encode("utf-8")
+            aad = self._resolve_aad(model_name, associated_data)
             return encryptor.decrypt(payload, associated_data=aad)

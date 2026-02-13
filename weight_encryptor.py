@@ -22,6 +22,7 @@ class WeightEncryptor:
     """
     Binds encrypted weights to a specific hardware fingerprint using AES-GCM.
     Hardware fingerprint may be overridden with the THALOS_HARDWARE_ID env var.
+    The `iterations` parameter controls PBKDF2 rounds for key derivation (security vs. CPU time).
     """
 
     def __init__(self, iterations: int = 200_000):
