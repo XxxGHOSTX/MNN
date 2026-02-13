@@ -23,9 +23,11 @@ class ThalosBridge:
     """Middleware bridge for manifold_coordinates, void_logs, and weights_vault tables."""
 
     def __init__(self, dsn: Optional[str] = None):
-        self.dsn = dsn or CONFIGURED_DSN
+        self.dsn = (dsn or CONFIGURED_DSN or "").strip()
         if not self.dsn:
             raise ValueError("Database DSN must be provided via argument or THALOS_DB_DSN.")
+        if any(ch in self.dsn for ch in ("\n", "\r")):
+            raise ValueError("Database DSN must not contain control characters.")
         self.encryptor = WeightEncryptor()
 
     @staticmethod
