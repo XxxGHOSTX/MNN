@@ -73,4 +73,3 @@ CREATE TABLE IF NOT EXISTS mnn.buffer_segments (
 
 CREATE INDEX IF NOT EXISTS idx_buffer_segments_lookup
     ON mnn.buffer_segments (artifact_id, manifold_id);
-
