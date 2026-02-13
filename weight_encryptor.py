@@ -22,7 +22,8 @@ class WeightEncryptor:
     """
     Binds encrypted weights to a specific hardware fingerprint using AES-GCM.
     Hardware fingerprint may be overridden with the THALOS_HARDWARE_ID env var.
-    The `iterations` parameter controls PBKDF2 rounds for key derivation (security vs. CPU time).
+    The `iterations` parameter controls PBKDF2 rounds for key derivation (security vs. CPU time);
+    the default of 200,000 mirrors OWASP guidance. Lower values reduce CPU cost but weaken security.
     """
 
     def __init__(self, iterations: int = 200_000):

@@ -10,6 +10,7 @@ from weight_encryptor import EncryptedWeights, WeightEncryptor
 
 
 DEFAULT_DSN = os.getenv("THALOS_DB_DSN", "postgresql://thalos:thalos@localhost:5432/thalos")
+# Keep ordered from lowest to highest severity; filtering relies on this ordering.
 SEVERITY_LEVELS = ("debug", "info", "warn", "error", "fatal")
 
 
