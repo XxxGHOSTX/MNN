@@ -10,6 +10,7 @@ from weight_encryptor import EncryptedWeights, WeightEncryptor
 
 
 DEFAULT_DSN = os.getenv("THALOS_DB_DSN")
+CONNECT_TIMEOUT = int(os.getenv("THALOS_DB_CONNECT_TIMEOUT", "10"))
 # Keep ordered from lowest to highest severity; filtering relies on this ordering.
 SEVERITY_LEVELS = ("debug", "info", "warn", "error", "fatal")
 
@@ -21,6 +22,7 @@ class ThalosBridge:
         self.dsn = dsn or DEFAULT_DSN
         if not self.dsn:
             raise ValueError("Database DSN must be provided via argument or THALOS_DB_DSN.")
+        self.encryptor = WeightEncryptor()
 
     @staticmethod
     def _resolve_aad(model_name: str, associated_data: Optional[bytes]) -> bytes:
@@ -28,7 +30,7 @@ class ThalosBridge:
 
     @contextmanager
     def connection(self):
-        conn = psycopg2.connect(self.dsn)
+        conn = psycopg2.connect(self.dsn, connect_timeout=CONNECT_TIMEOUT)
         try:
             yield conn
             conn.commit()
@@ -135,9 +137,8 @@ class ThalosBridge:
         metadata: Optional[Dict[str, Any]] = None,
         associated_data: Optional[bytes] = None,
     ) -> int:
-        encryptor = WeightEncryptor()
         aad = self._resolve_aad(model_name, associated_data)
-        payload = encryptor.encrypt(weights, associated_data=aad)
+        payload = self.encryptor.encrypt(weights, associated_data=aad)
         with self.connection() as conn, conn.cursor() as cur:
             cur.execute(
                 """
@@ -186,6 +187,5 @@ class ThalosBridge:
                 hardware_fingerprint=row["hardware_fingerprint"],
                 checksum=row["checksum"],
             )
-            encryptor = WeightEncryptor()
             aad = self._resolve_aad(model_name, associated_data)
-            return encryptor.decrypt(payload, associated_data=aad)
+            return self.encryptor.decrypt(payload, associated_data=aad)
