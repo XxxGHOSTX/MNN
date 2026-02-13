@@ -10,7 +10,10 @@ from weight_encryptor import EncryptedWeights, WeightEncryptor
 
 
 CONFIGURED_DSN = os.getenv("THALOS_DB_DSN")
-CONNECT_TIMEOUT = int(os.getenv("THALOS_DB_CONNECT_TIMEOUT", "10"))
+try:
+    CONNECT_TIMEOUT = int(os.getenv("THALOS_DB_CONNECT_TIMEOUT", "10"))
+except ValueError as exc:
+    raise ValueError("THALOS_DB_CONNECT_TIMEOUT must be an integer number of seconds.") from exc
 # Keep ordered from lowest to highest severity; filtering relies on this ordering.
 SEVERITY_LEVELS = ("debug", "info", "warn", "error", "fatal")
 
