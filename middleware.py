@@ -9,7 +9,7 @@ from psycopg2.extras import Json, RealDictCursor
 from weight_encryptor import EncryptedWeights, WeightEncryptor
 
 
-DEFAULT_DSN = os.getenv("THALOS_DB_DSN", "postgresql://thalos:thalos@localhost:5432/thalos")
+DEFAULT_DSN = os.getenv("THALOS_DB_DSN")
 # Keep ordered from lowest to highest severity; filtering relies on this ordering.
 SEVERITY_LEVELS = ("debug", "info", "warn", "error", "fatal")
 
@@ -19,6 +19,8 @@ class ThalosBridge:
 
     def __init__(self, dsn: Optional[str] = None):
         self.dsn = dsn or DEFAULT_DSN
+        if not self.dsn:
+            raise ValueError("Database DSN must be provided via argument or THALOS_DB_DSN.")
 
     @staticmethod
     def _resolve_aad(model_name: str, associated_data: Optional[bytes]) -> bytes:

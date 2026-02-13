@@ -1,7 +1,7 @@
 -- Thalos database schema for MNN persistence
 CREATE TABLE IF NOT EXISTS manifold_coordinates (
     id BIGSERIAL PRIMARY KEY,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     source VARCHAR(128) NOT NULL,
     coordinate JSONB NOT NULL,
     embedding DOUBLE PRECISION[] NOT NULL,
@@ -15,7 +15,7 @@ CREATE INDEX IF NOT EXISTS idx_manifold_coordinates_coordinate ON manifold_coord
 
 CREATE TABLE IF NOT EXISTS void_logs (
     id BIGSERIAL PRIMARY KEY,
-    logged_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    logged_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     severity VARCHAR(16) NOT NULL CHECK (severity IN ('debug', 'info', 'warn', 'error', 'fatal')),
     message TEXT NOT NULL,
     context JSONB,
@@ -33,8 +33,8 @@ CREATE TABLE IF NOT EXISTS weights_vault (
     ciphertext BYTEA NOT NULL,
     checksum TEXT NOT NULL,
     metadata JSONB DEFAULT '{}'::jsonb,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (model_name, hardware_fingerprint)
 );
 
