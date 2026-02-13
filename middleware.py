@@ -9,7 +9,7 @@ from psycopg2.extras import Json, RealDictCursor
 from weight_encryptor import EncryptedWeights, WeightEncryptor
 
 
-DEFAULT_DSN = os.getenv("THALOS_DB_DSN")
+CONFIGURED_DSN = os.getenv("THALOS_DB_DSN")
 CONNECT_TIMEOUT = int(os.getenv("THALOS_DB_CONNECT_TIMEOUT", "10"))
 # Keep ordered from lowest to highest severity; filtering relies on this ordering.
 SEVERITY_LEVELS = ("debug", "info", "warn", "error", "fatal")
@@ -19,7 +19,7 @@ class ThalosBridge:
     """Middleware bridge for manifold_coordinates, void_logs, and weights_vault tables."""
 
     def __init__(self, dsn: Optional[str] = None):
-        self.dsn = dsn or DEFAULT_DSN
+        self.dsn = dsn or CONFIGURED_DSN
         if not self.dsn:
             raise ValueError("Database DSN must be provided via argument or THALOS_DB_DSN.")
         self.encryptor = WeightEncryptor()
