@@ -10,6 +10,7 @@ from weight_encryptor import EncryptedWeights, WeightEncryptor
 
 
 DEFAULT_DSN = os.getenv("THALOS_DB_DSN", "postgresql://thalos:thalos@localhost:5432/thalos")
+SEVERITY_LEVELS = ("debug", "info", "warn", "error", "fatal")
 
 
 class ThalosBridge:
@@ -22,8 +23,11 @@ class ThalosBridge:
     def connection(self):
         conn = psycopg2.connect(self.dsn)
         try:
-            conn.autocommit = True
             yield conn
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
         finally:
             conn.close()
 
@@ -75,6 +79,8 @@ class ThalosBridge:
         coordinate_ref: Optional[int] = None,
     ) -> int:
         with self.connection() as conn, conn.cursor() as cur:
+            if severity not in SEVERITY_LEVELS:
+                raise ValueError(f"Invalid severity '{severity}'. Expected one of {SEVERITY_LEVELS}.")
             cur.execute(
                 """
                 INSERT INTO void_logs (severity, message, context, coordinate_ref)
@@ -88,11 +94,10 @@ class ThalosBridge:
     def fetch_void_logs(self, limit: int = 200, min_severity: Optional[str] = None) -> List[Dict[str, Any]]:
         with self.connection() as conn, conn.cursor(cursor_factory=RealDictCursor) as cur:
             if min_severity:
-                levels = ["debug", "info", "warn", "error", "fatal"]
-                if min_severity not in levels:
-                    raise ValueError(f"Invalid severity '{min_severity}'. Expected one of {levels}.")
-                min_idx = levels.index(min_severity)
-                allowed_levels = levels[min_idx:]
+                if min_severity not in SEVERITY_LEVELS:
+                    raise ValueError(f"Invalid severity '{min_severity}'. Expected one of {SEVERITY_LEVELS}.")
+                min_idx = SEVERITY_LEVELS.index(min_severity)
+                allowed_levels = SEVERITY_LEVELS[min_idx:]
                 cur.execute(
                     """
                     SELECT id, logged_at, severity, message, context, coordinate_ref

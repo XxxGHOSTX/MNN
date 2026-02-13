@@ -59,6 +59,8 @@ class WeightEncryptor:
         )
 
     def decrypt(self, payload: EncryptedWeights, associated_data: Optional[bytes] = None) -> bytes:
+        if payload.hardware_fingerprint != self.hardware_fingerprint():
+            raise ValueError("Hardware fingerprint mismatch; decryption attempted on different hardware.")
         key = self._derive_key(payload.salt)
         aes = AESGCM(key)
         plaintext = aes.decrypt(payload.nonce, payload.ciphertext, associated_data)

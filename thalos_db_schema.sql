@@ -6,8 +6,7 @@ CREATE TABLE IF NOT EXISTS manifold_coordinates (
     coordinate JSONB NOT NULL,
     embedding DOUBLE PRECISION[] NOT NULL,
     confidence NUMERIC(5, 4) CHECK (confidence >= 0 AND confidence <= 1),
-    tags TEXT[] DEFAULT '{}',
-    UNIQUE (source, created_at)
+    tags TEXT[] DEFAULT '{}'
 );
 
 CREATE INDEX IF NOT EXISTS idx_manifold_coordinates_created_at ON manifold_coordinates (created_at DESC);
