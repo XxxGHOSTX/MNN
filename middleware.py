@@ -141,15 +141,15 @@ class ThalosBridge:
         with self.connection() as conn, conn.cursor() as cur:
             cur.execute(
                 """
-                INSERT INTO weights_vault (model_name, hardware_fingerprint, nonce, salt, ciphertext, checksum, metadata, updated_at)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, now())
+                INSERT INTO weights_vault (model_name, hardware_fingerprint, nonce, salt, ciphertext, checksum, metadata, created_at, updated_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                 ON CONFLICT (model_name, hardware_fingerprint)
                 DO UPDATE SET nonce = EXCLUDED.nonce,
                               salt = EXCLUDED.salt,
                               ciphertext = EXCLUDED.ciphertext,
                               checksum = EXCLUDED.checksum,
                               metadata = EXCLUDED.metadata,
-                              updated_at = now()
+                              updated_at = CURRENT_TIMESTAMP
                 RETURNING id
                 """,
                 (
