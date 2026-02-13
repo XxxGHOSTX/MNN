@@ -41,7 +41,7 @@ class ThalosBridge:
             conn.close()
 
     def apply_schema(self, schema_path: Optional[str] = None) -> None:
-        path = Path(schema_path) if schema_path else Path(__file__).with_name("thalos_db_schema.sql")
+        path = Path(schema_path) if schema_path else Path(__file__).parent / "thalos_db_schema.sql"
         with path.open("r", encoding="utf-8") as ddl_file:
             ddl = ddl_file.read()
         with self.connection() as conn, conn.cursor() as cur:
