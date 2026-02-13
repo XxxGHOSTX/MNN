@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS manifold_coordinates (
     source VARCHAR(128) NOT NULL,
     coordinate JSONB NOT NULL,
     embedding DOUBLE PRECISION[] NOT NULL,
-    confidence NUMERIC(3, 2) CHECK (confidence >= 0 AND confidence <= 1), -- probability in [0,1]
+    confidence NUMERIC(4, 2) CHECK (confidence >= 0 AND confidence <= 1), -- probability in [0,1]
     tags TEXT[] DEFAULT '{}'
 );
 

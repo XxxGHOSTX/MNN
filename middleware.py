@@ -10,10 +10,11 @@ from weight_encryptor import EncryptedWeights, WeightEncryptor
 
 
 CONFIGURED_DSN = os.getenv("THALOS_DB_DSN")
+raw_timeout = os.getenv("THALOS_DB_CONNECT_TIMEOUT", "10")
 try:
-    CONNECT_TIMEOUT = int(os.getenv("THALOS_DB_CONNECT_TIMEOUT", "10"))
+    CONNECT_TIMEOUT = int(raw_timeout)
 except ValueError as exc:
-    raise ValueError("THALOS_DB_CONNECT_TIMEOUT must be an integer number of seconds.") from exc
+    raise ValueError(f"THALOS_DB_CONNECT_TIMEOUT must be an integer number of seconds, got: {raw_timeout!r}") from exc
 # Keep ordered from lowest to highest severity; filtering relies on this ordering.
 SEVERITY_LEVELS = ("debug", "info", "warn", "error", "fatal")
 
@@ -145,8 +146,8 @@ class ThalosBridge:
         with self.connection() as conn, conn.cursor() as cur:
             cur.execute(
                 """
-                INSERT INTO weights_vault (model_name, hardware_fingerprint, nonce, salt, ciphertext, checksum, metadata, created_at, updated_at)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                INSERT INTO weights_vault (model_name, hardware_fingerprint, nonce, salt, ciphertext, checksum, metadata)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (model_name, hardware_fingerprint)
                 DO UPDATE SET nonce = EXCLUDED.nonce,
                               salt = EXCLUDED.salt,
