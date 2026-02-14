@@ -31,7 +31,7 @@ Repository overview and quick pointers for agents seeing this codebase for the f
 - Running middleware without `THALOS_DB_DSN` raises `ValueError`; set the env var when using the bridge or avoid invoking those paths in tests.
 
 ## Tips for effective changes
-- Keep imports relative to the repo root (tests rely on `sys.path` injection). Run commands from `/home/runner/work/MNN/MNN`.
+- Keep imports relative to the repo root (tests rely on `sys.path` injection). Run commands from the repository root.
 - Prefer updating Python modules under `src/`; C++ core is standalone and compiled separately for checks.
 - Avoid touching `.github/agents` if present.
 - When modifying encryption, respect existing hardware-binding (checksums, hardware hash) to avoid breaking decryption.
