@@ -24,7 +24,7 @@ def analyze_sequences(
 
     valid = []
     for index, sequence in sequences:
-        if pattern and pattern not in sequence:
+        if pattern not in sequence:
             continue
         if not (min_length <= len(sequence) <= max_length):
             continue

@@ -23,8 +23,6 @@ def _generate_sequences_cached(
     generated = []
     for idx in indices:
         seq = _render_sequence(idx, pattern)
-        if pattern and pattern not in seq:
-            continue
         if not (min_length <= len(seq) <= max_length):
             continue
         generated.append((idx, seq))
@@ -45,6 +43,6 @@ def generate_sequences(indices: Iterable[int], constraints: Dict) -> List[Tuple[
     """
     pattern = constraints.get("pattern", "")
     min_length = constraints.get("min_length", 0)
-    max_length = constraints.get("max_length", 0)
+    max_length = constraints.get("max_length", float("inf"))
     indices_tuple = tuple(indices)
     return list(_generate_sequences_cached(pattern, min_length, max_length, indices_tuple))
