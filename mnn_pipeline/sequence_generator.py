@@ -2,7 +2,6 @@
 Sequence generation for the Matrix Neural Network pipeline.
 """
 
-from concurrent.futures import ThreadPoolExecutor
 from typing import Dict, Iterable, List
 
 
@@ -25,6 +24,4 @@ def generate_sequences(indices: Iterable[int], constraints: Dict) -> List[str]:
         List of generated sequence strings.
     """
     pattern = constraints.get("pattern", "")
-    with ThreadPoolExecutor() as executor:
-        return list(executor.map(lambda idx: _render_sequence(idx, pattern), indices))
-
+    return [_render_sequence(idx, pattern) for idx in indices]

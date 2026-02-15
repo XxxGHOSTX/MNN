@@ -4,6 +4,8 @@ Sequence analysis for the Matrix Neural Network pipeline.
 
 from typing import Dict, Iterable, List
 
+CONSTRAINT_BUFFER = 100
+
 
 def analyze_sequences(sequences: Iterable[str], constraints: Dict) -> List[str]:
     """
@@ -29,4 +31,3 @@ def analyze_sequences(sequences: Iterable[str], constraints: Dict) -> List[str]:
             continue
         valid.append(sequence)
     return valid
-CONSTRAINT_BUFFER = 100
