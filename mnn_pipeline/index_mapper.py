@@ -27,4 +27,3 @@ def map_constraints_to_indices(constraints: Dict) -> List[int]:
     """
     pattern = constraints.get("pattern", "")
     return list(_indices_for_pattern(pattern))
-

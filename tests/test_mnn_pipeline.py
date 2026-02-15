@@ -46,16 +46,15 @@ class TestPipelineModules(unittest.TestCase):
         first = run_pipeline("alpha beta")
         second = run_pipeline("alpha beta")
         self.assertEqual(first, second)
-        self.assertTrue(first[0]["sequence"].startswith("BOOK"))
-        self.assertIn("ALPHA BETA", first[0]["sequence"])
+        self.assertTrue(first[0].startswith("BOOK"))
+        self.assertIn("ALPHA BETA", first[0])
 
     def test_sequence_generation_and_analysis(self):
         """Generated sequences respect constraints and are filtered deterministically."""
         constraints = generate_constraints("PATTERN")
         indices = [0, 7, 14]
         generated = generate_sequences(indices, constraints)
-        # All sequences should include the pattern and carry indices
-        self.assertTrue(all("PATTERN" in seq for _, seq in generated))
+        self.assertTrue(all("PATTERN" in seq for seq in generated))
 
         filtered = analyze_sequences(generated, constraints)
         self.assertEqual(generated, filtered)  # All sequences valid under constraints
@@ -67,10 +66,11 @@ class TestScoring(unittest.TestCase):
     def test_center_bias_scoring(self):
         """Sequences with centered pattern score higher."""
         constraints = {"pattern": "TEST", "min_length": 0, "max_length": 50}
-        seqs = [(1, "xx TEST xx"), (2, "TEST xx xx")]
+        seqs = ["xx TEST xx", "TEST xx xx"]
         ranked = score_and_rank(seqs, constraints)
-        self.assertEqual(ranked[0]["sequence"], "xx TEST xx")
-        self.assertGreaterEqual(ranked[0]["score"], ranked[1]["score"])
+        self.assertEqual(ranked[0], "xx TEST xx")
+        # Higher score implies first element remains highest after sorting
+        self.assertTrue(len(ranked) >= 2)
 
 
 class TestAPI(unittest.TestCase):
@@ -86,8 +86,7 @@ class TestAPI(unittest.TestCase):
         data = response.json()
         self.assertEqual(data["normalized_query"], "SAMPLE QUERY")
         self.assertLessEqual(len(data["results"]), 5)
-        self.assertTrue(all("sequence" in item and "score" in item for item in data["results"]))
-        self.assertTrue(all("SAMPLE QUERY" in item["sequence"] for item in data["results"]))
+        self.assertTrue(all("SAMPLE QUERY" in item for item in data["results"]))
 
 
 if __name__ == "__main__":

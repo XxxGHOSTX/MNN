@@ -21,27 +21,24 @@ def _score_sequence(sequence: str, pattern: str) -> float:
     return -distance  # Higher when pattern is near the center
 
 
-def score_and_rank(
-    sequences: Iterable[Tuple[int, str]], constraints: Dict
-) -> List[Dict[str, float]]:
+def score_and_rank(sequences: Iterable[str], constraints: Dict) -> List[str]:
     """
-    Score sequences and return them ranked in descending order with stable tie-breaking
-    by index.
+    Score sequences and return them ranked in descending order.
 
     Args:
-        sequences: Iterable of (index, sequence) tuples to score.
+        sequences: Iterable of sequences to score.
         constraints: Constraint dictionary containing a 'pattern' key.
 
     Returns:
-        List of dicts with sequence and score, sorted by score then index.
+        List of sequences sorted by score (highest first).
     """
     pattern = constraints.get("pattern", "")
     scored = []
-    for index, sequence in sequences:
-        score = _score_sequence(sequence, pattern)
+    for seq in sequences:
+        score = _score_sequence(seq, pattern)
         if score == INVALID_SCORE:
             continue
-        scored.append((score, index, sequence))
+        scored.append((score, seq))
 
-    scored.sort(key=lambda item: (-item[0], item[1]))
-    return [{"sequence": seq, "score": score} for score, _, seq in scored]
+    scored.sort(key=lambda item: item[0], reverse=True)
+    return [seq for _, seq in scored]

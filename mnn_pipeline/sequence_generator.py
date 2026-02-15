@@ -2,7 +2,6 @@
 Sequence generation for the Matrix Neural Network pipeline.
 """
 
-import sys
 from functools import lru_cache
 from typing import Dict, Iterable, List, Tuple
 
@@ -15,35 +14,24 @@ def _render_sequence(index: int, pattern: str) -> str:
 
 
 @lru_cache(maxsize=128)
-def _generate_sequences_cached(
-    pattern: str, min_length: int, max_length: int, indices: Tuple[int, ...]
-) -> Tuple[Tuple[int, str], ...]:
+def _generate_sequences_cached(pattern: str, indices: Tuple[int, ...]) -> Tuple[str, ...]:
     """
-    Cached helper to build sequences and enforce constraints.
+    Cached helper to build sequences that include the provided pattern.
     """
-    generated = []
-    for idx in indices:
-        seq = _render_sequence(idx, pattern)
-        if not (min_length <= len(seq) <= max_length):
-            continue
-        generated.append((idx, seq))
-    return tuple(generated)
+    return tuple(_render_sequence(idx, pattern) for idx in indices)
 
 
-def generate_sequences(indices: Iterable[int], constraints: Dict) -> List[Tuple[int, str]]:
+def generate_sequences(indices: Iterable[int], constraints: Dict) -> List[str]:
     """
-    Generate sequences for each index while including the constraint pattern and enforcing
-    length constraints.
+    Generate sequences for each index while including the constraint pattern.
 
     Args:
         indices: Iterable of candidate indices.
         constraints: Constraint dictionary containing a 'pattern' key.
 
     Returns:
-        List of (index, sequence) tuples.
+        List of generated sequence strings.
     """
     pattern = constraints.get("pattern", "")
-    min_length = constraints.get("min_length", 0)
-    max_length = constraints.get("max_length", sys.maxsize)
     indices_tuple = tuple(indices)
-    return list(_generate_sequences_cached(pattern, min_length, max_length, indices_tuple))
+    return list(_generate_sequences_cached(pattern, indices_tuple))

@@ -19,7 +19,7 @@ from mnn_pipeline.sequence_generator import generate_sequences
 
 
 @lru_cache(maxsize=128)
-def run_pipeline(query: str) -> List[dict]:
+def run_pipeline(query: str) -> List[str]:
     """
     Execute the full deterministic MNN pipeline for a single query.
 

@@ -25,7 +25,7 @@ class QueryRequest(BaseModel):
 
 
 @lru_cache(maxsize=256)
-def _cached_pipeline(query: str) -> List[dict]:
+def _cached_pipeline(query: str) -> List[str]:
     """
     Cache pipeline results for repeated queries to improve responsiveness.
     """

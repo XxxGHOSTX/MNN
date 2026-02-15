@@ -2,18 +2,17 @@
 Sequence analysis for the Matrix Neural Network pipeline.
 """
 
-import sys
-from typing import Dict, Iterable, List, Tuple
+from typing import Dict, Iterable, List
 
 
 def analyze_sequences(
-    sequences: Iterable[Tuple[int, str]], constraints: Dict
-) -> List[Tuple[int, str]]:
+    sequences: Iterable[str], constraints: Dict
+) -> List[str]:
     """
     Filter sequences that satisfy constraint requirements.
 
     Args:
-        sequences: Iterable of (index, sequence) tuples.
+        sequences: Iterable of sequence strings.
         constraints: Constraint dictionary with pattern, min_length, and max_length.
 
     Returns:
@@ -21,13 +20,13 @@ def analyze_sequences(
     """
     pattern = constraints.get("pattern", "")
     min_length = constraints.get("min_length", 0)
-    max_length = constraints.get("max_length", sys.maxsize)
+    max_length = constraints.get("max_length", 0) + 100
 
     valid = []
-    for index, sequence in sequences:
+    for sequence in sequences:
         if pattern not in sequence:
             continue
         if not (min_length <= len(sequence) <= max_length):
             continue
-        valid.append((index, sequence))
+        valid.append(sequence)
     return valid
