@@ -7,7 +7,7 @@ pipeline stages to produce deterministic, relevant results from user queries.
 """
 
 from functools import lru_cache
-from typing import List, Dict
+from typing import List, Dict, Any
 
 from mnn_pipeline import (
     normalize_query,
@@ -21,7 +21,7 @@ from mnn_pipeline import (
 
 
 @lru_cache(maxsize=128)
-def run_pipeline(query: str) -> List[Dict[str, any]]:
+def run_pipeline(query: str) -> List[Dict[str, Any]]:
     """
     Execute the complete MNN pipeline for a given query.
     
