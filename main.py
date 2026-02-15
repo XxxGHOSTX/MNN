@@ -6,6 +6,7 @@ Example:
 """
 
 import sys
+from functools import lru_cache
 from typing import List
 
 from mnn_pipeline.analyzer import analyze_sequences
@@ -17,7 +18,8 @@ from mnn_pipeline.scorer import score_and_rank
 from mnn_pipeline.sequence_generator import generate_sequences
 
 
-def run_pipeline(query: str) -> List[str]:
+@lru_cache(maxsize=128)
+def run_pipeline(query: str) -> List[dict]:
     """
     Execute the full deterministic MNN pipeline for a single query.
 
@@ -33,7 +35,7 @@ def run_pipeline(query: str) -> List[str]:
     sequences = generate_sequences(indices, constraints)
     valid_sequences = analyze_sequences(sequences, constraints)
     ranked_sequences = score_and_rank(valid_sequences, constraints)
-    return ranked_sequences
+    return ranked_sequences[:10]
 
 
 def main() -> None:
@@ -51,4 +53,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

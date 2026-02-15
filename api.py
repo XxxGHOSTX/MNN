@@ -25,7 +25,7 @@ class QueryRequest(BaseModel):
 
 
 @lru_cache(maxsize=256)
-def _cached_pipeline(query: str) -> List[str]:
+def _cached_pipeline(query: str) -> List[dict]:
     """
     Cache pipeline results for repeated queries to improve responsiveness.
     """
@@ -45,4 +45,3 @@ def run_query(payload: QueryRequest) -> dict:
         "normalized_query": normalize_query(payload.query),
         "results": ranked_sequences,
     }
-
