@@ -30,7 +30,7 @@ class TestPipelineModules(unittest.TestCase):
         constraints = generate_constraints("ABC")
         self.assertEqual(constraints["pattern"], "ABC")
         self.assertEqual(constraints["min_length"], 3)
-        self.assertEqual(constraints["max_length"], 53)
+        self.assertEqual(constraints["max_length"], constraints["min_length"] + 50)
 
     def test_map_constraints_to_indices(self):
         """Index mapping uses the pattern length as step size."""
@@ -77,4 +77,3 @@ class TestAPI(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

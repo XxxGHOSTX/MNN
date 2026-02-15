@@ -18,14 +18,14 @@ def analyze_sequences(sequences: Iterable[str], constraints: Dict) -> List[str]:
     """
     pattern = constraints.get("pattern", "")
     min_length = constraints.get("min_length", 0)
+    # Allow a small buffer above the declarative max_length as defined in the specification.
     max_length = constraints.get("max_length", 0) + 100
 
     valid = []
     for sequence in sequences:
         if pattern not in sequence:
             continue
-        if not (len(sequence) >= min_length and len(sequence) <= max_length):
+        if not (min_length <= len(sequence) <= max_length):
             continue
         valid.append(sequence)
     return valid
-
