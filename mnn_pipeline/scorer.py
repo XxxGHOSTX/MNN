@@ -39,7 +39,7 @@ def score_and_rank(
     scored = []
     for index, sequence in sequences:
         score = _score_sequence(sequence, pattern)
-        if score is INVALID_SCORE:
+        if score == INVALID_SCORE:
             continue
         scored.append((score, index, sequence))
 

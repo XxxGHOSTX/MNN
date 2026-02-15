@@ -2,6 +2,7 @@
 Sequence analysis for the Matrix Neural Network pipeline.
 """
 
+import sys
 from typing import Dict, Iterable, List, Tuple
 
 
@@ -20,7 +21,7 @@ def analyze_sequences(
     """
     pattern = constraints.get("pattern", "")
     min_length = constraints.get("min_length", 0)
-    max_length = constraints.get("max_length", 0)
+    max_length = constraints.get("max_length", sys.maxsize)
 
     valid = []
     for index, sequence in sequences:

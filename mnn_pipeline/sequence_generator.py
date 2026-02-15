@@ -2,6 +2,7 @@
 Sequence generation for the Matrix Neural Network pipeline.
 """
 
+import sys
 from functools import lru_cache
 from typing import Dict, Iterable, List, Tuple
 
@@ -43,6 +44,6 @@ def generate_sequences(indices: Iterable[int], constraints: Dict) -> List[Tuple[
     """
     pattern = constraints.get("pattern", "")
     min_length = constraints.get("min_length", 0)
-    max_length = constraints.get("max_length", float("inf"))
+    max_length = constraints.get("max_length", sys.maxsize)
     indices_tuple = tuple(indices)
     return list(_generate_sequences_cached(pattern, min_length, max_length, indices_tuple))
