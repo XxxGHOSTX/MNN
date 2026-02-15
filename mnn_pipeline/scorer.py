@@ -33,6 +33,5 @@ def score_and_rank(sequences: Iterable[str], constraints: Dict) -> List[str]:
     """
     pattern = constraints.get("pattern", "")
     scored = [_score_sequence(seq, pattern) for seq in sequences]
-    scored.sort(key=lambda item: (item[0], item[1]), reverse=True)
+    scored.sort(key=lambda item: item[0], reverse=True)
     return [seq for _, seq in scored]
-
