@@ -19,7 +19,7 @@ def analyze_sequences(sequences: Iterable[str], constraints: Dict) -> List[str]:
     pattern = constraints.get("pattern", "")
     min_length = constraints.get("min_length", 0)
     # Allow a small buffer above the declarative max_length as defined in the specification.
-    max_length = constraints.get("max_length", 0) + 100
+    max_length = constraints.get("max_length", 0) + CONSTRAINT_BUFFER
 
     valid = []
     for sequence in sequences:
@@ -29,3 +29,4 @@ def analyze_sequences(sequences: Iterable[str], constraints: Dict) -> List[str]:
             continue
         valid.append(sequence)
     return valid
+CONSTRAINT_BUFFER = 100

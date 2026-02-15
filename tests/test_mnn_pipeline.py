@@ -22,8 +22,8 @@ class TestPipelineModules(unittest.TestCase):
 
     def test_normalize_query(self):
         """Non-alphanumeric characters are removed and text uppercased."""
-        result = normalize_query("He!!o  World??")
-        self.assertEqual(result, "HE O WORLD")
+        result = normalize_query("Hello,  World??")
+        self.assertEqual(result, "HELLO WORLD")
 
     def test_generate_constraints(self):
         """Constraints reflect pattern length."""

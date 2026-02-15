@@ -4,13 +4,15 @@ Scoring and ranking utilities for the Matrix Neural Network pipeline.
 
 from typing import Dict, Iterable, List, Tuple
 
+INVALID_SCORE = float("-inf")
+
 
 def _score_sequence(sequence: str, pattern: str) -> Tuple[float, str]:
     """
     Score a sequence by how centrally its pattern appears.
     """
     if not pattern or pattern not in sequence:
-        return (float("-inf"), sequence)
+        return (INVALID_SCORE, sequence)
 
     pattern_start = sequence.index(pattern)
     pattern_center = pattern_start + len(pattern) / 2
