@@ -115,6 +115,38 @@ class QueryResponse(BaseModel):
     count: int = Field(..., description="Number of results returned")
 
 
+class FeedbackRequest(BaseModel):
+    """
+    Request model for feedback endpoint.
+    
+    Attributes:
+        query: The original query string
+        result_sequence: The result sequence being rated
+        rating: User rating from 1 (poor) to 5 (excellent)
+        user_id: Optional user identifier
+        comment: Optional text comment
+    """
+    query: str = Field(..., min_length=1, description="Original query")
+    result_sequence: str = Field(..., min_length=1, description="Result sequence being rated")
+    rating: int = Field(..., ge=1, le=5, description="Rating from 1 (poor) to 5 (excellent)")
+    user_id: Optional[str] = Field(None, description="Optional user identifier")
+    comment: Optional[str] = Field(None, max_length=500, description="Optional comment (max 500 chars)")
+
+
+class FeedbackResponse(BaseModel):
+    """
+    Response model for feedback endpoint.
+    
+    Attributes:
+        success: Whether feedback was recorded successfully
+        message: Confirmation message
+        feedback_id: Unique identifier for the feedback entry
+    """
+    success: bool
+    message: str
+    timestamp: str
+
+
 def _cached_execute_api_pipeline(query: str) -> List[Dict[str, Any]]:
     """Internal cached pipeline execution for API. Do not call directly."""
     return _execute_pipeline(query, top_n=5)
@@ -408,8 +440,182 @@ def version_info():
             "database": bool(config.THALOS_DB_DSN),
             "query_classification": True,
             "synonym_expansion": True,
+            "user_feedback": True,
         }
     }
+
+
+@app.post("/feedback", response_model=FeedbackResponse, tags=["feedback"])
+def submit_feedback(request: FeedbackRequest):
+    """
+    Submit user feedback for a query result.
+    
+    Allows users to rate results and provide comments, enabling the system
+    to track result quality and suggest improvements over time.
+    
+    Args:
+        request: FeedbackRequest with query, result, rating, and optional comment
+        
+    Returns:
+        FeedbackResponse with confirmation
+        
+    Raises:
+        HTTPException 400: Invalid rating or empty fields
+        HTTPException 500: Failed to store feedback
+        
+    Example:
+        POST /feedback
+        {
+            "query": "quantum computing",
+            "result_sequence": "BOOK 0: QUANTUM COMPUTING...",
+            "rating": 5,
+            "user_id": "user123",
+            "comment": "Very helpful result"
+        }
+    """
+    from feedback import get_feedback_store
+    from datetime import datetime
+    
+    try:
+        store = get_feedback_store()
+        entry = store.add_feedback(
+            query=request.query,
+            result_sequence=request.result_sequence,
+            rating=request.rating,
+            user_id=request.user_id,
+            comment=request.comment
+        )
+        
+        logger.info(
+            f"Feedback submitted for query: {request.query[:50]}",
+            extra={'rating': request.rating, 'user_id': request.user_id}
+        )
+        
+        return FeedbackResponse(
+            success=True,
+            message="Feedback recorded successfully",
+            timestamp=entry['timestamp']
+        )
+        
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Failed to store feedback: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to store feedback. Please try again."
+        )
+
+
+@app.get("/feedback/stats", tags=["feedback"])
+def feedback_statistics():
+    """
+    Get overall feedback statistics.
+    
+    Returns aggregated statistics about user feedback including:
+    - Total feedback count
+    - Average ratings
+    - Rating distribution
+    - Number of unique queries rated
+    
+    Returns:
+        Dictionary with feedback statistics
+        
+    Example response:
+        {
+            "total_feedback": 150,
+            "unique_queries": 42,
+            "average_rating": 4.2,
+            "rating_distribution": {
+                "1": 5,
+                "2": 10,
+                "3": 20,
+                "4": 50,
+                "5": 65
+            }
+        }
+    """
+    from feedback import get_feedback_store
+    
+    store = get_feedback_store()
+    stats = store.get_statistics()
+    
+    return stats
+
+
+@app.get("/suggestions", tags=["feedback"])
+def query_suggestions(query: str = Field(..., min_length=1, description="Current query")):
+    """
+    Get query suggestions based on feedback history.
+    
+    Suggests similar queries that have high ratings, useful for
+    query refinement and discovery of related topics.
+    
+    Args:
+        query: The current query string (query parameter)
+        
+    Returns:
+        Dictionary with suggested queries and their ratings
+        
+    Example:
+        GET /suggestions?query=quantum%20computing
+        
+        Response:
+        {
+            "original_query": "quantum computing",
+            "suggestions": [
+                {
+                    "suggested_query": "quantum entanglement",
+                    "average_rating": 4.8,
+                    "feedback_count": 15,
+                    "word_overlap": 1
+                },
+                ...
+            ]
+        }
+    """
+    from feedback import suggest_similar_queries
+    
+    suggestions = suggest_similar_queries(query, max_suggestions=5)
+    
+    return {
+        "original_query": query,
+        "suggestions": suggestions
+    }
+
+
+@app.get("/query/performance", tags=["feedback"])
+def query_performance(query: str = Field(..., min_length=1, description="Query to analyze")):
+    """
+    Analyze query performance based on user feedback.
+    
+    Provides insights into how well a query performs based on historical
+    user ratings and suggests improvements if available.
+    
+    Args:
+        query: The query string to analyze
+        
+    Returns:
+        Dictionary with performance metrics and suggestions
+        
+    Example:
+        GET /query/performance?query=artificial%20intelligence
+        
+        Response:
+        {
+            "query": "artificial intelligence",
+            "average_rating": 4.5,
+            "total_feedback": 25,
+            "positive_ratio": 88.0,
+            "top_rated_results": 3,
+            "suggestions": [...]
+        }
+    """
+    from feedback import analyze_query_performance
+    
+    analysis = analyze_query_performance(query)
+    
+    return analysis
 
 
 if __name__ == "__main__":
