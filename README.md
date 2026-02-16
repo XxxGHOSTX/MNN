@@ -678,13 +678,23 @@ Use Docker Compose to run the full stack including PostgreSQL database:
 
 #### Starting Services
 
+Start all services (API + database):
+
 ```bash
 docker compose up -d
 ```
 
+Start only the API (without database):
+
+```bash
+docker compose up -d api
+```
+
 This starts:
 - **api**: MNN Pipeline FastAPI service on port 8000
-- **db**: PostgreSQL 16 database on port 5432 (internal)
+- **db**: PostgreSQL 16 database on port 5432 (optional)
+
+The API can run independently without the database. Database connection is optional and configured via `THALOS_DB_DSN` environment variable.
 
 #### Stopping Services
 
@@ -703,7 +713,7 @@ docker compose down -v
 Configure services using environment variables. Create a `.env` file in the project root:
 
 ```env
-# PostgreSQL configuration
+# PostgreSQL configuration (optional - only if using database)
 POSTGRES_DB=thalos
 POSTGRES_USER=thalos
 POSTGRES_PASSWORD=your_secure_password
@@ -711,8 +721,16 @@ POSTGRES_PORT=5432
 
 # API configuration
 API_PORT=8000
+
+# Database connection (optional - leave empty to run without database)
 THALOS_DB_DSN=postgresql://thalos:your_secure_password@db:5432/thalos
 THALOS_DB_CONNECT_TIMEOUT=10
+```
+
+To run the API without database, omit the `THALOS_DB_DSN` variable or set it to empty:
+
+```env
+THALOS_DB_DSN=
 ```
 
 Or pass environment variables directly:
