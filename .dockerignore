@@ -13,7 +13,9 @@ __pycache__
 
 # Testing
 .pytest_cache
+.mypy_cache
 .coverage
+coverage.xml
 htmlcov/
 *.cover
 .hypothesis/
@@ -37,6 +39,7 @@ build/
 *.egg-info/
 
 # Virtual environments
+.venv
 venv/
 env/
 ENV/

@@ -12,8 +12,8 @@ permissions:
   contents: read
 
 jobs:
-  test:
-    name: Test Suite
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
     
     steps:
@@ -33,22 +33,35 @@ jobs:
       
       - name: Run linting
         run: |
-          python -m py_compile api.py
-          python -m py_compile main.py
-          python -m py_compile middleware.py
-          python -m py_compile weight_encryptor.py
-          python -m py_compile manual_validation.py
-          find mnn_pipeline -name "*.py" -exec python -m py_compile {} +
-          find tests -name "*.py" -exec python -m py_compile {} +
+          python -m compileall .
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
       
       - name: Run tests
         run: |
-          python -m unittest discover tests -v
+          python -m pytest
 
-  docker:
-    name: Docker Build & Smoke Test
+  docker-smoke:
+    name: Docker Smoke Test
     runs-on: ubuntu-latest
-    needs: test
+    needs: [lint, test]
     
     services:
       postgres:
@@ -116,12 +129,23 @@ jobs:
       
       - name: Smoke test - Query endpoint
         run: |
-          response=$(curl -s -X POST http://localhost:8000/query \
+          set -euo pipefail
+          response=$(curl -s -w "\n%{http_code}" -X POST http://localhost:8000/query \
             -H "Content-Type: application/json" \
             -d '{"query":"artificial intelligence"}')
-          echo "Query response: $response"
-          echo "$response" | grep -q "results" || exit 1
-          echo "$response" | grep -q "count" || exit 1
+          body=$(echo "$response" | head -n -1)
+          status=$(echo "$response" | tail -n 1)
+          echo "Query response body: $body"
+          echo "HTTP status code: $status"
+          # Verify status is 200
+          if [ "$status" != "200" ]; then
+            echo "ERROR: Expected status 200, got $status"
+            exit 1
+          fi
+          # Verify response is valid JSON with expected fields
+          echo "$body" | grep -q '"results"' || { echo "ERROR: Missing 'results' field"; exit 1; }
+          echo "$body" | grep -q '"count"' || { echo "ERROR: Missing 'count' field"; exit 1; }
+          echo "Smoke test passed: Status 200, valid JSON response"
       
       - name: Check container logs
         if: always()

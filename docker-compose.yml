@@ -1,7 +1,7 @@
 services:
   # PostgreSQL database for ThalosBridge
   db:
-    image: postgres:16-alpine
+    image: postgres:16
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-thalos}
       POSTGRES_USER: ${POSTGRES_USER:-thalos}

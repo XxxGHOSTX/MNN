@@ -732,11 +732,14 @@ make help
 # Install dependencies
 make install
 
-# Run linting (py_compile)
+# Run linting (compileall)
 make lint
 
-# Run test suite
+# Run test suite (pytest)
 make test
+
+# Run Docker smoke test (build, run, test, cleanup)
+make smoke
 
 # Build Docker image
 make build
@@ -757,7 +760,76 @@ make clean
 make fmt
 ```
 
+#### Smoke Test
+
+The `make smoke` target runs a complete end-to-end smoke test:
+
+```bash
+make smoke
+```
+
+This will:
+1. Build the Docker image (`mnn:local`)
+2. Start a container on port 8000
+3. Wait for the API to be ready (5 seconds)
+4. Send a test query to the `/query` endpoint
+5. Verify the response
+6. Stop and clean up the container
+
+Manual smoke test example:
+
+```bash
+# After starting the API (via docker run or docker compose)
+curl -X POST http://localhost:8000/query \
+  -H "Content-Type: application/json" \
+  -d '{"query":"hello"}'
+```
+
+Expected response:
+```json
+{
+  "query": "HELLO",
+  "results": [
+    {
+      "sequence": "BOOK 0: ...",
+      "score": 0.95
+    }
+  ],
+  "count": 5
+}
+```
+
 The `fmt` target is a placeholder for future code formatting integration. To enable it, install a formatter like `black` or `ruff` and update the Makefile target.
+
+### Continuous Integration
+
+The project includes a GitHub Actions CI workflow (`.github/workflows/ci.yml`) that runs on every push and pull request to the `main` branch.
+
+#### CI Pipeline
+
+The CI workflow consists of three jobs:
+
+1. **Lint**: Validates Python syntax using `python -m compileall .`
+2. **Test**: Runs the test suite using `pytest`
+3. **Docker Smoke Test**: Builds the Docker image, starts a container, and validates the API endpoints
+
+All jobs must pass for the CI pipeline to succeed. The workflow is deterministic and fail-fast.
+
+#### CI Expectations
+
+- **Lint job**: Must complete without syntax errors
+- **Test job**: All tests must pass
+- **Docker smoke test**: Must verify:
+  - Docker image builds successfully
+  - Container starts and becomes healthy
+  - `/health` endpoint returns `"healthy"`
+  - `/` root endpoint returns API information
+  - `/query` endpoint returns HTTP 200 with valid JSON containing `results` and `count` fields
+
+The workflow uses official GitHub Actions:
+- `actions/checkout@v4` - Check out repository code
+- `actions/setup-python@v5` - Set up Python 3.12 environment
+- `docker/setup-buildx-action@v3` - Set up Docker Buildx for image building
 
 ### PostgreSQL Configuration for ThalosBridge
 

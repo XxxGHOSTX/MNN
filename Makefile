@@ -1,4 +1,4 @@
-.PHONY: help install lint test build run compose-up compose-down clean fmt
+.PHONY: help install lint test smoke build run compose-up compose-down clean fmt
 
 # Default target
 help:
@@ -7,6 +7,7 @@ help:
 	@echo "install        - Install Python dependencies (optionally in venv)"
 	@echo "lint           - Run linting (py_compile on all Python sources)"
 	@echo "test           - Run test suite with pytest"
+	@echo "smoke          - Run Docker smoke test (build, run, test, cleanup)"
 	@echo "build          - Build Docker image"
 	@echo "run            - Run Docker container (single instance)"
 	@echo "compose-up     - Start services with docker compose"
@@ -32,25 +33,36 @@ install:
 # Lint Python sources
 lint:
 	@echo "Linting Python sources..."
-	@python -m py_compile api.py
-	@python -m py_compile main.py
-	@python -m py_compile middleware.py
-	@python -m py_compile weight_encryptor.py
-	@python -m py_compile manual_validation.py
-	@find mnn_pipeline -name "*.py" -exec python -m py_compile {} +
-	@find tests -name "*.py" -exec python -m py_compile {} +
+	@python -m compileall .
 	@echo "Linting complete - no syntax errors found."
 
 # Run tests
 test:
 	@echo "Running test suite..."
-	@python -m unittest discover tests -v
+	@python -m pytest
 	@echo "Tests complete."
+
+# Run Docker smoke test
+smoke:
+	@echo "Running Docker smoke test..."
+	@set -euo pipefail; \
+	echo "Building Docker image..."; \
+	docker build -t mnn:local . && \
+	echo "Starting container..."; \
+	docker run --rm -d -p 8000:8000 --name mnn_api mnn:local && \
+	echo "Waiting for container to be ready..."; \
+	sleep 5 && \
+	echo "Testing API endpoint..."; \
+	curl -X POST http://localhost:8000/query -H "Content-Type: application/json" -d '{"query":"hello"}' && \
+	echo "" && \
+	echo "Stopping container..."; \
+	docker stop mnn_api && \
+	echo "Smoke test passed!"
 
 # Build Docker image
 build:
 	@echo "Building Docker image..."
-	docker build -t mnn-pipeline:latest .
+	docker build -t mnn:local .
 	@echo "Docker build complete."
 
 # Run Docker container
@@ -58,7 +70,7 @@ run:
 	@echo "Running Docker container..."
 	@echo "Container will be available at http://localhost:8000"
 	@echo "Press Ctrl+C to stop"
-	docker run --rm -p 8000:8000 --name mnn-pipeline mnn-pipeline:latest
+	docker run --rm -p 8000:8000 --name mnn-pipeline mnn:local
 
 # Start docker-compose services
 compose-up:
