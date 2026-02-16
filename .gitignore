@@ -58,3 +58,7 @@ htmlcov/
 /tmp/
 mnn/__pycache__/
 mnn/tests/__pycache__/
+
+# Checkpoints (runtime generated)
+checkpoints/
+*.jsonl
