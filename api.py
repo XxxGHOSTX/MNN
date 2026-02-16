@@ -156,12 +156,14 @@ def query_endpoint(request: QueryRequest):
         # Validate query
         if not request.query or not request.query.strip():
             raise HTTPException(status_code=400, detail="Query cannot be empty")
+
+        # Normalize and validate normalized query
+        normalized = normalize_query(request.query)
+        if not normalized or not normalized.strip():
+            raise HTTPException(status_code=400, detail="Query cannot be empty after normalization")
         
         # Execute cached pipeline
         results = cached_pipeline(request.query)
-        
-        # Get normalized query for response
-        normalized = normalize_query(request.query)
         
         # Build response
         return QueryResponse(
