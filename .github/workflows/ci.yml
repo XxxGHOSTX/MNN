@@ -1,0 +1,136 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Run linting
+        run: |
+          python -m py_compile api.py
+          python -m py_compile main.py
+          python -m py_compile middleware.py
+          python -m py_compile weight_encryptor.py
+          python -m py_compile manual_validation.py
+          find mnn_pipeline -name "*.py" -exec python -m py_compile {} +
+          find tests -name "*.py" -exec python -m py_compile {} +
+      
+      - name: Run tests
+        run: |
+          python -m unittest discover tests -v
+
+  docker:
+    name: Docker Build & Smoke Test
+    runs-on: ubuntu-latest
+    needs: test
+    
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: thalos
+          POSTGRES_USER: thalos
+          POSTGRES_PASSWORD: thalos_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Build Docker image
+        run: |
+          docker build -t mnn-pipeline:test .
+      
+      - name: Create Docker network
+        run: |
+          docker network create mnn-test-network
+      
+      - name: Run container
+        run: |
+          docker run -d \
+            --name mnn-test \
+            --network mnn-test-network \
+            -p 8000:8000 \
+            -e THALOS_DB_DSN="postgresql://thalos:thalos_password@host.docker.internal:5432/thalos" \
+            --add-host host.docker.internal:host-gateway \
+            mnn-pipeline:test
+      
+      - name: Wait for API to be ready
+        run: |
+          echo "Waiting for API to become healthy..."
+          for i in {1..30}; do
+            if curl -s http://localhost:8000/health > /dev/null; then
+              echo "API is healthy!"
+              break
+            fi
+            echo "Attempt $i/30: API not ready yet, waiting..."
+            sleep 2
+          done
+      
+      - name: Smoke test - Health endpoint
+        run: |
+          response=$(curl -s http://localhost:8000/health)
+          echo "Health check response: $response"
+          echo "$response" | grep -q "healthy" || exit 1
+      
+      - name: Smoke test - Root endpoint
+        run: |
+          response=$(curl -s http://localhost:8000/)
+          echo "Root endpoint response: $response"
+          echo "$response" | grep -q "MNN Knowledge Engine" || exit 1
+      
+      - name: Smoke test - Query endpoint
+        run: |
+          response=$(curl -s -X POST http://localhost:8000/query \
+            -H "Content-Type: application/json" \
+            -d '{"query":"artificial intelligence"}')
+          echo "Query response: $response"
+          echo "$response" | grep -q "results" || exit 1
+          echo "$response" | grep -q "count" || exit 1
+      
+      - name: Check container logs
+        if: always()
+        run: |
+          echo "=== Container logs ==="
+          docker logs mnn-test
+      
+      - name: Stop container
+        if: always()
+        run: |
+          docker stop mnn-test || true
+          docker rm mnn-test || true
