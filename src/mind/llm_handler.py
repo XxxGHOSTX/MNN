@@ -119,7 +119,7 @@ class SemanticSieve:
         Initialize the Semantic Sieve.
         
         Args:
-            noise_threshold: Percentage of noise to discard (0.0 to 1.0)
+            noise_threshold: Minimum linguistic score required to accept text (0.0 to 1.0)
         """
         self.noise_threshold = noise_threshold
         
@@ -162,8 +162,8 @@ class SemanticSieve:
         # Calculate linguistic structure score
         score = self._calculate_linguistic_score(text)
         
-        # Apply threshold
-        is_valid = score > (1.0 - self.noise_threshold)
+        # Apply threshold (higher thresholds discard more noise)
+        is_valid = score >= self.noise_threshold
         
         return is_valid, score
     
