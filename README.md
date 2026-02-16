@@ -488,12 +488,14 @@ assert result1 == result2  # Always True
 Run the complete test suite:
 
 ```bash
-# Run all MNN Pipeline tests
-pytest tests/test_pipeline.py -v
-pytest tests/test_api.py -v
+# Run all MNN Pipeline tests with unittest (native test framework)
+python -m unittest discover tests
 
-# Run with coverage
-pytest tests/test_pipeline.py tests/test_api.py --cov=mnn_pipeline --cov=main --cov=api
+# Or run with pytest (works with unittest-style tests)
+pytest tests/test_pipeline.py tests/test_api.py -v
+
+# Run with coverage using pytest
+pytest tests/test_pipeline.py tests/test_api.py --cov=mnn_pipeline --cov=main --cov=api --cov-report=term-missing
 ```
 
 Test coverage includes:

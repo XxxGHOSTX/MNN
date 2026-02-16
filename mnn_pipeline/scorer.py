@@ -43,19 +43,20 @@ def score_and_rank(sequences: list, constraints: dict) -> list:
     scored_sequences = []
     
     for idx, sequence in enumerate(sequences):
-        # Find pattern position in sequence
+        # Find pattern position in sequence (start index)
         pattern_position = sequence.find(pattern)
         
         if pattern_position == -1:
             # Should not happen if analyzer worked correctly
             continue
         
-        # Calculate center of sequence
+        # Calculate center of sequence and center of matched pattern
         center_position = len(sequence) / 2
+        pattern_center = pattern_position + len(pattern) / 2
         
         # Calculate center-weighted score
         # Closer to center = higher score
-        distance_from_center = abs(center_position - pattern_position)
+        distance_from_center = abs(center_position - pattern_center)
         score = 1.0 / (1.0 + distance_from_center)
         
         scored_sequences.append({

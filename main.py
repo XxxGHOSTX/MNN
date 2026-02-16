@@ -20,10 +20,13 @@ from mnn_pipeline import (
 )
 
 
-@lru_cache(maxsize=128)
-def run_pipeline(query: str) -> List[Dict[str, Any]]:
+def _execute_pipeline(query: str, top_n: int = 10) -> List[Dict[str, Any]]:
     """
     Execute the complete MNN pipeline for a given query.
+    
+    Internal function that performs the actual pipeline execution.
+    This is called by both the CLI (run_pipeline) and API (cached_pipeline)
+    to avoid code duplication.
     
     Pipeline stages:
     1. Query Normalization: Clean and standardize input
@@ -32,7 +35,43 @@ def run_pipeline(query: str) -> List[Dict[str, Any]]:
     4. Sequence Generation: Generate sequences at each index
     5. Analysis/Filtering: Validate and filter sequences
     6. Scoring/Ranking: Rank by relevance (center-weighted)
-    7. Return top 10 results
+    7. Return top N results
+    
+    Args:
+        query: The user's search query (any string)
+        top_n: Number of top results to return (default: 10)
+        
+    Returns:
+        List of top N ranked results, each a dictionary containing:
+            - 'sequence' (str): The result sequence
+            - 'score' (float): Relevance score
+    """
+    # Stage 1: Normalize query
+    pattern = normalize_query(query)
+    
+    # Stage 2: Generate constraints
+    constraints = generate_constraints(pattern)
+    
+    # Stage 3: Map constraints to indices
+    indices = map_constraints_to_indices(constraints)
+    
+    # Stage 4: Generate candidate sequences
+    candidates = generate_sequences(indices, constraints)
+    
+    # Stage 5: Analyze and filter sequences
+    valid = analyze_sequences(candidates, constraints)
+    
+    # Stage 6: Score and rank sequences
+    ranked = score_and_rank(valid, constraints)
+    
+    # Return top N results
+    return ranked[:top_n]
+
+
+@lru_cache(maxsize=128)
+def run_pipeline(query: str) -> List[Dict[str, Any]]:
+    """
+    Execute the complete MNN pipeline for a given query with caching.
     
     The pipeline is fully deterministic: identical inputs always produce
     identical outputs. This is enforced through:
@@ -59,26 +98,7 @@ def run_pipeline(query: str) -> List[Dict[str, Any]]:
         >>> run_pipeline("test") == run_pipeline("test")
         True
     """
-    # Stage 1: Normalize query
-    pattern = normalize_query(query)
-    
-    # Stage 2: Generate constraints
-    constraints = generate_constraints(pattern)
-    
-    # Stage 3: Map constraints to indices
-    indices = map_constraints_to_indices(constraints)
-    
-    # Stage 4: Generate candidate sequences
-    candidates = generate_sequences(indices, constraints)
-    
-    # Stage 5: Analyze and filter sequences
-    valid = analyze_sequences(candidates, constraints)
-    
-    # Stage 6: Score and rank sequences
-    ranked = score_and_rank(valid, constraints)
-    
-    # Return top 10 results
-    return ranked[:10]
+    return _execute_pipeline(query, top_n=10)
 
 
 def main():

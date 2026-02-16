@@ -6,20 +6,19 @@ Provides a /query endpoint for external systems (like Thalos Prime) to submit
 queries and receive deterministic, ranked results.
 """
 
+import logging
 from functools import lru_cache
 from typing import List, Dict, Any
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
-from mnn_pipeline import (
-    normalize_query,
-    generate_constraints,
-    map_constraints_to_indices,
-    generate_sequences,
-    analyze_sequences,
-    score_and_rank,
-)
+from main import _execute_pipeline
+from mnn_pipeline import normalize_query
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 # FastAPI app instance
@@ -74,26 +73,8 @@ def cached_pipeline(query: str) -> List[Dict[str, Any]]:
     Returns:
         List of top 5 ranked results
     """
-    # Stage 1: Normalize query
-    pattern = normalize_query(query)
-    
-    # Stage 2: Generate constraints
-    constraints = generate_constraints(pattern)
-    
-    # Stage 3: Map constraints to indices
-    indices = map_constraints_to_indices(constraints)
-    
-    # Stage 4: Generate candidate sequences
-    candidates = generate_sequences(indices, constraints)
-    
-    # Stage 5: Analyze and filter sequences
-    valid = analyze_sequences(candidates, constraints)
-    
-    # Stage 6: Score and rank sequences
-    ranked = score_and_rank(valid, constraints)
-    
-    # Return top 5 results for API (fewer than CLI for efficiency)
-    return ranked[:5]
+    # Use the shared pipeline function with top_n=5 for API
+    return _execute_pipeline(query, top_n=5)
 
 
 @app.get("/")
@@ -181,10 +162,12 @@ def query_endpoint(request: QueryRequest):
         # Re-raise HTTP exceptions
         raise
     except Exception as e:
-        # Catch any unexpected errors
+        # Log the full exception internally for debugging
+        logger.error(f"Pipeline execution failed for query: {request.query}", exc_info=True)
+        # Return generic error message to client
         raise HTTPException(
             status_code=500,
-            detail=f"Pipeline execution failed: {str(e)}"
+            detail="Pipeline execution failed. Please try again or contact support."
         )
 
 
@@ -208,10 +191,20 @@ def health_check():
 
 
 if __name__ == "__main__":
+    import os
     import uvicorn
     
-    print("Starting MNN Knowledge Engine API...")
-    print("API will be available at: http://localhost:8000")
-    print("Interactive docs at: http://localhost:8000/docs")
+    # Default to localhost for security, but allow override via environment variable
+    host = os.getenv("MNN_API_HOST", "127.0.0.1")
+    port = int(os.getenv("MNN_API_PORT", "8000"))
     
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    print("Starting MNN Knowledge Engine API...")
+    print(f"API will be available at: http://{host}:{port}")
+    print(f"Interactive docs at: http://{host}:{port}/docs")
+    print()
+    if host == "0.0.0.0":
+        print("⚠️  WARNING: API is binding to 0.0.0.0 (all interfaces)")
+        print("   This exposes the API to the entire network without authentication.")
+        print("   For production, use a proper WSGI server with security configurations.")
+    
+    uvicorn.run(app, host=host, port=port)
