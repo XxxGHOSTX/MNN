@@ -209,13 +209,23 @@ def query_endpoint(request: QueryRequest, http_request: Request):
             "count": 5
         }
     """
+    import time
+    from metrics import get_metrics_collector, track_slow_query
+    
+    metrics = get_metrics_collector()
+    start_time = time.time()
+    
     client_host = http_request.client.host if http_request.client else "unknown"
     logger.info(f"Received query from {client_host}: {request.query[:100]}")
+    
+    # Increment total queries
+    metrics.increment_counter('mnn_queries_total')
 
     try:
         # Validate query is not empty or whitespace-only
         if not request.query or not request.query.strip():
             logger.warning(f"Empty query from {client_host}")
+            metrics.increment_counter('mnn_queries_error_total', labels={'error_type': 'empty_query'})
             raise HTTPException(status_code=400, detail="Query cannot be empty")
 
         # Security validation
@@ -225,9 +235,21 @@ def query_endpoint(request: QueryRequest, http_request: Request):
         try:
             results = cached_pipeline(request.query)
             logger.info(f"Query processed successfully, returned {len(results)} results")
+            
+            # Track success
+            duration = time.time() - start_time
+            metrics.observe_histogram('mnn_query_duration_seconds', duration, {'status': 'success'})
+            metrics.increment_counter('mnn_queries_success_total')
+            
+            # Check for slow queries
+            track_slow_query(request.query, duration, threshold=1.0)
+            
         except ValueError as ve:
             # Handle empty normalized pattern
             logger.warning(f"Invalid query after normalization: {ve}")
+            duration = time.time() - start_time
+            metrics.observe_histogram('mnn_query_duration_seconds', duration, {'status': 'error'})
+            metrics.increment_counter('mnn_queries_error_total', labels={'error_type': 'validation_error'})
             raise HTTPException(status_code=400, detail=str(ve))
 
         # Get normalized query for response
@@ -240,12 +262,23 @@ def query_endpoint(request: QueryRequest, http_request: Request):
             count=len(results)
         )
 
-    except HTTPException:
+    except HTTPException as he:
+        # Track HTTP errors (but don't double-count validation errors)
+        if he.status_code != 400:
+            duration = time.time() - start_time
+            metrics.observe_histogram('mnn_query_duration_seconds', duration, {'status': 'error'})
+            metrics.increment_counter('mnn_queries_error_total', labels={'error_type': f'http_{he.status_code}'})
         # Re-raise HTTP exceptions
         raise
     except Exception as e:
         # Log the full exception internally for debugging
         logger.error(f"Pipeline execution failed for query: {request.query}", exc_info=True)
+        
+        # Track unexpected errors
+        duration = time.time() - start_time
+        metrics.observe_histogram('mnn_query_duration_seconds', duration, {'status': 'error'})
+        metrics.increment_counter('mnn_queries_error_total', labels={'error_type': type(e).__name__})
+        
         # Return generic error message to client
         raise HTTPException(
             status_code=500,
@@ -258,22 +291,36 @@ def health_check():
     """
     Health check endpoint for monitoring.
 
-    Checks application health including database connectivity.
+    Checks application health including database connectivity and cache status.
 
     Returns:
         Dictionary with status information including:
         - status: overall health status
         - service: service name
+        - version: API version
         - database: database connectivity status
         - cache_info: cache statistics
+        - uptime_seconds: time since startup
     """
+    from datetime import datetime
+    import time
+    
+    # Calculate uptime (using app startup time if available)
+    if not hasattr(app.state, 'start_time'):
+        app.state.start_time = time.time()
+    uptime = time.time() - app.state.start_time
+    
     health_status = {
         "status": "healthy",
         "service": "MNN Knowledge Engine",
+        "version": "1.0.0",
+        "timestamp": datetime.now().isoformat(),
+        "uptime_seconds": int(uptime),
         "cache_info": {
             "pipeline_cache_size": _cached_execute_api_pipeline.cache_info().currsize,
             "pipeline_cache_hits": _cached_execute_api_pipeline.cache_info().hits,
             "pipeline_cache_misses": _cached_execute_api_pipeline.cache_info().misses,
+            "pipeline_cache_maxsize": _cached_execute_api_pipeline.cache_info().maxsize,
         }
     }
 
@@ -293,6 +340,76 @@ def health_check():
         health_status["database"] = "not_configured"
 
     return health_status
+
+
+@app.get("/metrics", tags=["monitoring"])
+def metrics_endpoint():
+    """
+    Prometheus-compatible metrics endpoint.
+    
+    Exposes application metrics in Prometheus text format for monitoring
+    and alerting. Metrics include:
+    - Query counts (total, success, errors)
+    - Query duration histograms
+    - Cache performance (hits, misses, size)
+    - Slow query counts
+    
+    Returns:
+        Plain text response in Prometheus exposition format
+        
+    Example metrics:
+        # TYPE mnn_queries_total counter
+        mnn_queries_total 1234
+        
+        # TYPE mnn_query_duration_seconds histogram
+        mnn_query_duration_seconds_count{status="success"} 1200
+        mnn_query_duration_seconds_sum{status="success"} 45.2
+        
+        # TYPE mnn_cache_hit_rate gauge
+        mnn_cache_hit_rate 0.85
+    """
+    from fastapi.responses import PlainTextResponse
+    from metrics import get_metrics_collector, update_cache_metrics
+    
+    # Update cache metrics before export
+    cache_info = _cached_execute_api_pipeline.cache_info()
+    update_cache_metrics(cache_info)
+    
+    # Get metrics collector
+    metrics = get_metrics_collector()
+    
+    # Export in Prometheus format
+    prometheus_text = metrics.export_prometheus()
+    
+    return PlainTextResponse(prometheus_text, media_type="text/plain; version=0.0.4")
+
+
+@app.get("/api/version", tags=["monitoring"])
+def version_info():
+    """
+    Get API version information.
+    
+    Returns detailed version information including:
+    - API version
+    - Pipeline version
+    - Deployment environment
+    - Feature flags
+    
+    Returns:
+        Dictionary with version details
+    """
+    return {
+        "api_version": "1.0.0",
+        "pipeline_version": "1.0.0",
+        "environment": config.ENVIRONMENT if hasattr(config, 'ENVIRONMENT') else "production",
+        "features": {
+            "rate_limiting": config.RATE_LIMIT_ENABLED,
+            "authentication": config.API_AUTH_ENABLED,
+            "database": bool(config.THALOS_DB_DSN),
+            "query_classification": True,
+            "synonym_expansion": True,
+        }
+    }
 
 
 if __name__ == "__main__":
