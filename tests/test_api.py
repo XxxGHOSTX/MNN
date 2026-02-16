@@ -104,7 +104,12 @@ class TestAPIEndpoints(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
         data = response.json()
         self.assertIn('detail', data)
-        self.assertIn('normalization', data['detail'].lower())
+        # Query validation now catches excessive repetition or normalized empty patterns
+        self.assertTrue(
+            'repetition' in data['detail'].lower() or
+            'normalization' in data['detail'].lower() or
+            'empty' in data['detail'].lower()
+        )
     
     def test_query_endpoint_missing_query_field(self):
         """Test that requests without query field are rejected."""
