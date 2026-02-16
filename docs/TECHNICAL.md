@@ -98,7 +98,7 @@ Characters that appear together frequently will have similar embeddings through 
 
 ### 3. Semantic Sieve
 
-The Semantic Sieve filters out 99.999% of random permutations, keeping only linguistically-structured text.
+The Semantic Sieve filters out random permutations by requiring text to clear a minimum linguistic confidence threshold.
 
 #### Filtering Process
 
@@ -111,7 +111,7 @@ def filter(text: str) -> (bool, float):
         (is_valid, confidence_score)
     """
     score = calculate_linguistic_score(text)
-    is_valid = score > (1.0 - noise_threshold)
+    is_valid = score >= noise_threshold
     return is_valid, score
 ```
 
@@ -120,7 +120,7 @@ The linguistic score is calculated by:
 2. Looking up each bigram in a frequency table
 3. Computing average frequency as the score
 
-Common English bigrams like "th", "he", "in" increase the score, while random combinations like "xq", "zj" decrease it.
+Common English bigrams like "th", "he", "in" increase the score, while random combinations like "xq", "zj" decrease it. Raising `noise_threshold` discards more permutations by demanding higher linguistic scores.
 
 ### 4. Weight Encryption
 
