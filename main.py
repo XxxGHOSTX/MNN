@@ -18,6 +18,13 @@ from mnn_pipeline import (
     score_and_rank,
     output_results,
 )
+from observability import (
+    generate_event_id,
+    PipelineLogger,
+    CheckpointWriter,
+    get_metrics_collector,
+)
+from config import config
 
 
 def _execute_pipeline(query: str, top_n: int = 10) -> List[Dict[str, Any]]:
@@ -48,6 +55,7 @@ def _execute_pipeline(query: str, top_n: int = 10) -> List[Dict[str, Any]]:
             
     Raises:
         ValueError: If the normalized query is empty
+        RuntimeError: If pipeline limits are exceeded
     """
     # Stage 1: Normalize query
     pattern = normalize_query(query)
@@ -56,23 +64,61 @@ def _execute_pipeline(query: str, top_n: int = 10) -> List[Dict[str, Any]]:
     if not pattern or not pattern.strip():
         raise ValueError("Query cannot be empty after normalization")
     
+    # Initialize observability
+    event_id = generate_event_id(pattern)
+    logger = PipelineLogger(event_id, query)
+    checkpoint_writer = CheckpointWriter(event_id)
+    
     # Stage 2: Generate constraints
+    logger.start_stage("constraints")
     constraints = generate_constraints(pattern)
+    logger.complete_stage("constraints", data={"pattern_length": len(pattern)})
+    checkpoint_writer.write_checkpoint("constraints", constraints)
     
     # Stage 3: Map constraints to indices
+    logger.start_stage("indices")
     indices = map_constraints_to_indices(constraints)
     
+    # Enforce indices limit
+    if len(indices) > config.MAX_INDICES_PER_REQUEST:
+        logger.error_stage("indices", f"Indices count {len(indices)} exceeds limit {config.MAX_INDICES_PER_REQUEST}")
+        raise RuntimeError(
+            f"Indices limit exceeded: {len(indices)} > {config.MAX_INDICES_PER_REQUEST}"
+        )
+    
+    logger.complete_stage("indices", data={"indices_count": len(indices)})
+    checkpoint_writer.write_checkpoint("indices", indices[:100])  # Limit checkpoint size
+    
     # Stage 4: Generate candidate sequences
+    logger.start_stage("generate")
     candidates = generate_sequences(indices, constraints)
     
+    # Enforce sequences limit
+    if len(candidates) > config.MAX_SEQUENCES_PER_REQUEST:
+        logger.error_stage("generate", f"Sequences count {len(candidates)} exceeds limit {config.MAX_SEQUENCES_PER_REQUEST}")
+        raise RuntimeError(
+            f"Sequences limit exceeded: {len(candidates)} > {config.MAX_SEQUENCES_PER_REQUEST}"
+        )
+    
+    logger.complete_stage("generate", data={"sequences_count": len(candidates)})
+    
     # Stage 5: Analyze and filter sequences
+    logger.start_stage("analyze")
     valid = analyze_sequences(candidates, constraints)
+    logger.complete_stage("analyze", data={"valid_count": len(valid)})
     
     # Stage 6: Score and rank sequences
+    logger.start_stage("score")
     ranked = score_and_rank(valid, constraints)
+    logger.complete_stage("score", data={"ranked_count": len(ranked)})
     
-    # Return top N results
-    return ranked[:top_n]
+    # Stage 7: Output preparation
+    logger.start_stage("output")
+    results = ranked[:top_n]
+    logger.complete_stage("output", data={"result_count": len(results)})
+    checkpoint_writer.write_checkpoint("results", results)
+    
+    return results
 
 
 def _cached_execute_pipeline(query: str, top_n: int) -> List[Dict[str, Any]]:

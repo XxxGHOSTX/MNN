@@ -18,6 +18,7 @@ from main import _execute_pipeline
 from mnn_pipeline import normalize_query
 from config import config
 from logging_config import setup_logging, get_logger, set_request_id
+from observability import get_metrics_collector
 from security import (
     RateLimiter,
     SecurityHeadersMiddleware,
@@ -95,9 +96,9 @@ class QueryRequest(BaseModel):
     """
     query: str = Field(
         ...,
-        min_length=1,
-        max_length=1000,
-        description="Search query string (max 1000 characters)",
+        min_length=config.MIN_QUERY_LENGTH,
+        max_length=config.MAX_QUERY_LENGTH,
+        description=f"Search query string ({config.MIN_QUERY_LENGTH}-{config.MAX_QUERY_LENGTH} characters)",
     )
 
 
@@ -141,10 +142,23 @@ def cached_pipeline(query: str) -> List[Dict[str, Any]]:
     Returns:
         List of top 5 ranked results (deep copy to prevent cache corruption)
     """
+    # Track cache performance
+    metrics = get_metrics_collector()
+    cache_info_before = _cached_execute_api_pipeline.cache_info()
+    
     # Get cached result and return a deep copy
     # Deep copy happens on every call, not just on cache miss
     import copy
-    return copy.deepcopy(_cached_execute_api_pipeline(query))
+    result = copy.deepcopy(_cached_execute_api_pipeline(query))
+    
+    # Check if this was a cache hit or miss
+    cache_info_after = _cached_execute_api_pipeline.cache_info()
+    if cache_info_after.hits > cache_info_before.hits:
+        metrics.increment_cache_hits()
+    elif cache_info_after.misses > cache_info_before.misses:
+        metrics.increment_cache_misses()
+    
+    return result
 
 
 @app.get("/")
@@ -161,6 +175,8 @@ def root():
         "description": "Deterministic knowledge engine inspired by Library of Babel",
         "endpoints": {
             "/query": "POST endpoint for submitting queries",
+            "/health": "GET endpoint for health check",
+            "/metrics": "GET endpoint for observability metrics",
             "/docs": "Interactive API documentation",
         },
         "example": {
@@ -187,7 +203,8 @@ def query_endpoint(request: QueryRequest, http_request: Request):
 
     Raises:
         HTTPException:
-            - 400 if query is empty or invalid
+            - 400 if query is empty, invalid, or exceeds limits
+            - 422 if query validation fails
             - 500 if pipeline execution fails
 
     Examples:
@@ -211,6 +228,10 @@ def query_endpoint(request: QueryRequest, http_request: Request):
     """
     client_host = http_request.client.host if http_request.client else "unknown"
     logger.info(f"Received query from {client_host}: {request.query[:100]}")
+    
+    # Track metrics
+    metrics = get_metrics_collector()
+    metrics.increment_requests()
 
     try:
         # Validate query is not empty or whitespace-only
@@ -228,7 +249,26 @@ def query_endpoint(request: QueryRequest, http_request: Request):
         except ValueError as ve:
             # Handle empty normalized pattern
             logger.warning(f"Invalid query after normalization: {ve}")
+            metrics.increment_errors()
             raise HTTPException(status_code=400, detail=str(ve))
+        except RuntimeError as re:
+            # Handle limit violations
+            logger.warning(f"Pipeline limit exceeded: {re}")
+            metrics.increment_errors()
+            error_msg = str(re)
+            # Sanitize error message to be deterministic
+            if "Indices limit exceeded" in error_msg:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Request exceeds indices limit ({config.MAX_INDICES_PER_REQUEST})"
+                )
+            elif "Sequences limit exceeded" in error_msg:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Request exceeds sequences limit ({config.MAX_SEQUENCES_PER_REQUEST})"
+                )
+            else:
+                raise HTTPException(status_code=400, detail="Request exceeds processing limits")
 
         # Get normalized query for response
         normalized = normalize_query(request.query)
@@ -246,7 +286,8 @@ def query_endpoint(request: QueryRequest, http_request: Request):
     except Exception as e:
         # Log the full exception internally for debugging
         logger.error(f"Pipeline execution failed for query: {request.query}", exc_info=True)
-        # Return generic error message to client
+        metrics.increment_errors()
+        # Return generic error message to client (no stack trace)
         raise HTTPException(
             status_code=500,
             detail="Pipeline execution failed. Please try again or contact support."
@@ -293,6 +334,61 @@ def health_check():
         health_status["database"] = "not_configured"
 
     return health_status
+
+
+@app.get("/metrics", tags=["monitoring"])
+def metrics_endpoint():
+    """
+    Metrics endpoint for observability.
+    
+    Returns pipeline metrics including request counts, cache performance,
+    and stage durations. All data is deterministic and aggregated.
+    
+    Returns:
+        Dictionary with metrics including:
+        - request_count: Total requests processed
+        - error_count: Total errors encountered
+        - cache_hits: Number of cache hits
+        - cache_misses: Number of cache misses
+        - cache_hit_rate: Cache hit rate (0.0-1.0)
+        - last_stage_durations: Duration of last execution per stage
+        - avg_stage_durations: Average duration per stage
+    
+    Examples:
+        GET /metrics
+        
+        Response:
+        {
+            "request_count": 42,
+            "error_count": 1,
+            "cache_hits": 30,
+            "cache_misses": 12,
+            "cache_hit_rate": 0.714,
+            "last_stage_durations": {
+                "analyze": 0.001234,
+                "constraints": 0.000567,
+                ...
+            },
+            "avg_stage_durations": {
+                "analyze": 0.001456,
+                "constraints": 0.000623,
+                ...
+            }
+        }
+    """
+    metrics = get_metrics_collector()
+    snapshot = metrics.get_snapshot()
+    
+    # Add cache info from LRU cache
+    cache_info = _cached_execute_api_pipeline.cache_info()
+    snapshot["lru_cache_info"] = {
+        "size": cache_info.currsize,
+        "maxsize": cache_info.maxsize,
+        "hits": cache_info.hits,
+        "misses": cache_info.misses,
+    }
+    
+    return snapshot
 
 
 if __name__ == "__main__":

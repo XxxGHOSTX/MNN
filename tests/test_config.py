@@ -31,10 +31,15 @@ class TestConfigDefaults(unittest.TestCase):
 
             self.assertEqual(config.MNN_API_HOST, "127.0.0.1")
             self.assertEqual(config.MNN_API_PORT, 8000)
-            self.assertEqual(config.MAX_QUERY_LENGTH, 1000)
+            self.assertEqual(config.MAX_QUERY_LENGTH, 2000)
+            self.assertEqual(config.MIN_QUERY_LENGTH, 1)
             self.assertFalse(config.RATE_LIMIT_ENABLED)
             self.assertEqual(config.LOG_LEVEL, "INFO")
             self.assertEqual(config.CACHE_SIZE, 256)
+            self.assertEqual(config.MAX_SEQUENCES_PER_REQUEST, 1000)
+            self.assertEqual(config.MAX_INDICES_PER_REQUEST, 1000)
+            self.assertFalse(config.ENABLE_CHECKPOINTS)
+            self.assertTrue(config.ENABLE_PIPELINE_LOGGING)
         finally:
             # Restore env vars
             for var, value in old_values.items():
@@ -104,6 +109,41 @@ class TestConfigValidation(unittest.TestCase):
         with self.assertRaises(ValueError) as context:
             TestConfig.validate()
         self.assertIn("THALOS_DB_CONNECT_TIMEOUT", str(context.exception))
+    
+    def test_config_validate_min_max_query_length(self):
+        """Test that MIN_QUERY_LENGTH cannot exceed MAX_QUERY_LENGTH."""
+        from config import Config
+
+        class TestConfig(Config):
+            MIN_QUERY_LENGTH = 2000
+            MAX_QUERY_LENGTH = 1000  # Less than min
+
+        with self.assertRaises(ValueError) as context:
+            TestConfig.validate()
+        self.assertIn("MIN_QUERY_LENGTH", str(context.exception))
+        self.assertIn("MAX_QUERY_LENGTH", str(context.exception))
+    
+    def test_config_validate_invalid_sequences_limit(self):
+        """Test that invalid sequences limit raises error."""
+        from config import Config
+
+        class TestConfig(Config):
+            MAX_SEQUENCES_PER_REQUEST = 0  # Invalid
+
+        with self.assertRaises(ValueError) as context:
+            TestConfig.validate()
+        self.assertIn("MAX_SEQUENCES_PER_REQUEST", str(context.exception))
+    
+    def test_config_validate_invalid_indices_limit(self):
+        """Test that invalid indices limit raises error."""
+        from config import Config
+
+        class TestConfig(Config):
+            MAX_INDICES_PER_REQUEST = -1  # Invalid
+
+        with self.assertRaises(ValueError) as context:
+            TestConfig.validate()
+        self.assertIn("MAX_INDICES_PER_REQUEST", str(context.exception))
 
 
 if __name__ == '__main__':
