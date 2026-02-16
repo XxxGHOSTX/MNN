@@ -83,11 +83,18 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         """Add security headers to response."""
         response = await call_next(request)
 
+        # Determine if the request is effectively HTTPS (direct or via proxy)
+        scheme = request.url.scheme
+        forwarded_proto = request.headers.get("x-forwarded-proto", "")
+        forwarded_proto = forwarded_proto.split(",")[0].strip().lower() if forwarded_proto else ""
+        is_secure = scheme == "https" or forwarded_proto == "https"
+
         # Security headers
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-XSS-Protection"] = "1; mode=block"
-        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        if is_secure:
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         response.headers["Content-Security-Policy"] = "default-src 'self'"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
 
