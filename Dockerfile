@@ -35,6 +35,9 @@ COPY middleware.py .
 COPY weight_encryptor.py .
 COPY thalos_db_schema.sql .
 COPY manual_validation.py .
+COPY config.py .
+COPY logging_config.py .
+COPY security.py .
 
 # Copy mnn_pipeline directory
 COPY mnn_pipeline/ ./mnn_pipeline/
