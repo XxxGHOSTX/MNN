@@ -61,14 +61,21 @@ smoke:
 	echo "Starting container..."; \
 	docker run --rm -d -p 8000:8000 --name mnn_api mnn:local && \
 	echo "Waiting for container to be ready..."; \
+	healthy=false; \
 	for i in {1..30}; do \
 		if curl -s http://localhost:8000/health > /dev/null 2>&1; then \
 			echo "API is healthy!"; \
+			healthy=true; \
 			break; \
 		fi; \
 		echo "Attempt $$i/30: Waiting for API..."; \
 		sleep 1; \
-	done && \
+	done; \
+	if [ "$$healthy" = "false" ]; then \
+		echo "ERROR: API did not become healthy after 30 attempts"; \
+		docker stop mnn_api || true; \
+		exit 1; \
+	fi && \
 	echo "Testing API endpoint..."; \
 	response=$$(curl -s -w "\n%{http_code}" -X POST http://localhost:8000/query \
 		-H "Content-Type: application/json" \
