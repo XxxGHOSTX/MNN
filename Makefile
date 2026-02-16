@@ -9,8 +9,8 @@ help:
 	@echo "test           - Run test suite with pytest"
 	@echo "build          - Build Docker image"
 	@echo "run            - Run Docker container (single instance)"
-	@echo "compose-up     - Start services with docker-compose"
-	@echo "compose-down   - Stop services with docker-compose"
+	@echo "compose-up     - Start services with docker compose"
+	@echo "compose-down   - Stop services with docker compose"
 	@echo "clean          - Clean build artifacts and caches"
 	@echo "fmt            - Format code (stub - no formatter configured)"
 

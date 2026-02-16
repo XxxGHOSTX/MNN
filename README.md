@@ -679,7 +679,7 @@ Use Docker Compose to run the full stack including PostgreSQL database:
 #### Starting Services
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 This starts:
@@ -689,13 +689,13 @@ This starts:
 #### Stopping Services
 
 ```bash
-docker-compose down
+docker compose down
 ```
 
 To remove volumes (database data):
 
 ```bash
-docker-compose down -v
+docker compose down -v
 ```
 
 #### Configuration
@@ -718,7 +718,7 @@ THALOS_DB_CONNECT_TIMEOUT=10
 Or pass environment variables directly:
 
 ```bash
-POSTGRES_PASSWORD=mypassword docker-compose up -d
+POSTGRES_PASSWORD=mypassword docker compose up -d
 ```
 
 ### Makefile Targets
@@ -744,10 +744,10 @@ make build
 # Run Docker container
 make run
 
-# Start docker-compose services
+# Start docker compose services
 make compose-up
 
-# Stop docker-compose services
+# Stop docker compose services
 make compose-down
 
 # Clean build artifacts
@@ -797,7 +797,7 @@ export THALOS_DB_CONNECT_TIMEOUT="10"
 
 #### Schema Initialization
 
-The database schemas are automatically initialized when using docker-compose. For manual setup:
+The database schemas are automatically initialized when using docker compose. For manual setup:
 
 ```bash
 psql -U thalos -d thalos -f sql/relational_buffer_schema.sql
@@ -874,11 +874,11 @@ View container logs:
 docker logs <container_name>
 
 # Docker Compose
-docker-compose logs api
-docker-compose logs db
+docker compose logs api
+docker compose logs db
 
 # Follow logs in real-time
-docker-compose logs -f api
+docker compose logs -f api
 ```
 
 #### Production Considerations
@@ -926,10 +926,10 @@ curl http://localhost:8000/health
 **Database connection errors:**
 ```bash
 # Verify PostgreSQL is running
-docker-compose ps db
+docker compose ps db
 
 # Check database logs
-docker-compose logs db
+docker compose logs db
 
 # Test connection manually
 psql -h localhost -U thalos -d thalos
