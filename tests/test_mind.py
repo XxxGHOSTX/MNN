@@ -102,9 +102,14 @@ class TestSemanticSieve(unittest.TestCase):
         low_threshold_sieve = SemanticSieve(noise_threshold=0.1)
         high_threshold_sieve = SemanticSieve(noise_threshold=0.2)
         
-        is_valid_low, _ = low_threshold_sieve.filter(text)
-        is_valid_high, _ = high_threshold_sieve.filter(text)
+        is_valid_low, score_low = low_threshold_sieve.filter(text)
+        is_valid_high, score_high = high_threshold_sieve.filter(text)
         
+        # Verify the score falls between the thresholds
+        self.assertGreaterEqual(score_low, 0.1)
+        self.assertLess(score_high, 0.2)
+        
+        # Verify threshold enforcement
         self.assertTrue(is_valid_low)
         self.assertFalse(is_valid_high)
     

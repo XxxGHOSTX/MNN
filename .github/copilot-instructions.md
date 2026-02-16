@@ -27,7 +27,7 @@ Repository overview and quick pointers for agents seeing this codebase for the f
 - Tests are pure Python/memory-bound; `middleware.py` is not exercised by the suite.
 
 ## Known issues & workarounds
-- Initial test run failed with `ModuleNotFoundError: No module named 'numpy'` when dependencies were missing; fixed by `pip install -r requirements.txt`, after which `python -m unittest discover tests` passed (54 tests).
+- Initial test run failed with `ModuleNotFoundError: No module named 'numpy'` when dependencies were missing; fixed by `pip install -r requirements.txt`, after which `python -m unittest discover tests` passed (123 tests).
 - Running middleware without `THALOS_DB_DSN` raises `ValueError`; set the env var when using the bridge or avoid invoking those paths in tests.
 
 ## Tips for effective changes
