@@ -1,15 +1,15 @@
-version: '3'
+version: '3.8'
 services:
   web:
     build: .
     ports:
       - "8080:80"
   db:
-    image: mysql
+    image: mysql:8.0.35
     ports:
       - "3306:3306"
     environment:
-      - MYSQL_ROOT_PASSWORD=password
-      - MYSQL_USER=user
-      - MYSQL_PASSWORD=password
-      - MYSQL_DATABASE=demoDB
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD not set}
+      - MYSQL_USER=${MYSQL_USER:-user}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:?MYSQL_PASSWORD not set}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-demoDB}
