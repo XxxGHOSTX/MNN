@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-THALOS (The Heuristic Algorithm for Lattice-Optimized Synthesis) is a novel Matrix Neural Network (MNN) system that implements a unique approach to language model architecture inspired by libraryofbabel.info's permutation logic.
+THALOS (The Heuristic Algorithm for Lattice-Optimized Synthesis) is a novel Matrix Neural Network (MNN) system that implements a unique approach to language model architecture inspired by https://libraryofbabel.info permutation logic.
 
 ## What Was Implemented
 
@@ -20,7 +20,7 @@ The implementation includes five major subsystems working together:
    - **Stage 1 - Generation**: Creates permutation space for 29-character set (a-z + space, comma, period)
    - **Stage 2 - Refinement**: Applies mathematical transformations (rotation matrices, normalization, tanh)
    - **Stage 3 - Filtering**: Conceptual Filter extracts patterns (peaks, valleys, edges)
-   - Replicates libraryofbabel.info PRNG logic without scraping the website
+   - Replicates https://libraryofbabel.info PRNG logic without scraping the website
 
 3. **Weight Encryption System** (`src/encryption/`)
    - Hardware ID generation from system characteristics (machine, processor, MAC address)
@@ -209,7 +209,7 @@ Potential improvements for future versions:
 ### ✅ Original Requirements Met
 
 1. **3-stage mathematical refinement process**: ✅ Implemented in `PermutationEngine`
-2. **Permutation Engine (libraryofbabel.info logic)**: ✅ PRNG-based generation with seed 42
+2. **Permutation Engine (https://libraryofbabel.info logic)**: ✅ PRNG-based generation with seed 42
 3. **Conceptual Filter**: ✅ Pattern extraction (peaks, valleys, edges)
 4. **THALOS custom linear algebra stack**: ✅ Custom `ThalosMatrix` operations
 5. **Weight Encryption**: ✅ Hardware-bound rotating keys
@@ -238,7 +238,7 @@ The system is fully tested (54/54 tests passing), comprehensively documented, an
 
 ## References
 
-- libraryofbabel.info - Original permutation logic inspiration
+- https://libraryofbabel.info - Original permutation logic inspiration
 - Geometric Deep Learning framework
 - SHA-256 cryptographic standard
 - PostgreSQL database system

@@ -1,6 +1,6 @@
 # THALOS: Matrix Neural Network (MNN)
 
-A neural network library implementing the THALOS system - a refined approach to LLM architecture inspired by libraryofbabel.info's permutation logic.
+A neural network library implementing the THALOS system - a refined approach to LLM architecture inspired by https://libraryofbabel.info permutation logic.
 
 ## Overview
 
@@ -23,7 +23,7 @@ activated = matrix.apply_activation("relu")
 ```
 
 ### 2. **Permutation Engine with 3-Stage Refinement**
-Replicates libraryofbabel.info's logic with mathematical refinement and conceptual filtering.
+Replicates https://libraryofbabel.info logic with mathematical refinement and conceptual filtering.
 
 **Operational Sequence:**
 1. **Stage 1**: Permutation Space Generation (29-character set: a-z + space, comma, period)
@@ -162,7 +162,7 @@ python -m unittest tests.test_buffer
 
 ```
 THALOS Architecture
-├── Permutation Engine (libraryofbabel.info logic)
+├── Permutation Engine (https://libraryofbabel.info logic)
 │   ├── Stage 1: Permutation Generation (29-char set)
 │   ├── Stage 2: Mathematical Refinement (3 iterations)
 │   └── Stage 3: Conceptual Filtering (pattern extraction)
@@ -186,7 +186,7 @@ THALOS Architecture
 Unlike BPE tokenization, THALOS maps each of the 29 characters to vertices in a high-dimensional manifold. The system learns "meaning" from the relational distances between these vertices.
 
 ### Semantic Sieve
-Instead of training on all possible permutations (like libraryofbabel.info's infinite library), the Semantic Sieve filters out 99.999% of noise, capturing only permutations that align with known linguistic structures.
+Instead of training on all possible permutations (like https://libraryofbabel.info's infinite library), the Semantic Sieve filters out 99.999% of noise, capturing only permutations that align with known linguistic structures.
 
 ### Weight Encryption
 During training, neural network parameters are encrypted using rotating keys derived from the system's hardware ID, ensuring binary-level protection of the trained "intelligence."
@@ -230,7 +230,7 @@ MIT License - See LICENSE file for details.
 
 ## References
 
-- libraryofbabel.info - Inspiration for permutation logic
+- https://libraryofbabel.info - Inspiration for permutation logic
 - Geometric Deep Learning - Manifold-based embeddings
 - Hardware-bound Encryption - Binary-level parameter protection
 # MNN
@@ -304,7 +304,7 @@ restored = bridge.load_encrypted_weights("mnn-core")
 
 ## What is MNN Pipeline?
 
-The MNN Pipeline is a **deterministic, constraint-driven knowledge engine** inspired by Jorge Luis Borges' Library of Babel concept, but transformed into a practical, queryable system. Unlike libraryofbabel.info which returns 99.999% noise, MNN Pipeline generates and returns only relevant, validated results.
+The MNN Pipeline is a **deterministic, constraint-driven knowledge engine** inspired by Jorge Luis Borges' Library of Babel concept, but transformed into a practical, queryable system. Unlike https://libraryofbabel.info which returns 99.999% noise, MNN Pipeline generates and returns only relevant, validated results.
 
 ### Key Differences from LibraryOfBabel.info
 

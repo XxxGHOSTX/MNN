@@ -8,7 +8,7 @@ THALOS (The Heuristic Algorithm for Lattice-Optimized Synthesis) is a novel neur
 
 ### 1. Permutation Engine
 
-The Permutation Engine replicates the logic of libraryofbabel.info's PRNG-based text generation system, but applies a three-stage refinement process.
+The Permutation Engine replicates the logic of https://libraryofbabel.info PRNG-based text generation system, but applies a three-stage refinement process.
 
 #### Stage 1: Permutation Space Generation
 
@@ -378,7 +378,7 @@ def process_query(query):
 
 ## References
 
-1. Basile, J. (2015). "The Library of Babel". libraryofbabel.info
+1. Basile, J. (2015). "The Library of Babel". https://libraryofbabel.info
 2. Bronstein, M. et al. (2021). "Geometric Deep Learning"
 3. SHA-256 Cryptographic Hash Standard (FIPS 180-4)
 4. PostgreSQL Documentation v15

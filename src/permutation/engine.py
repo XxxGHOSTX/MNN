@@ -1,5 +1,5 @@
 """
-Permutation Engine - Inspired by libraryofbabel.info
+Permutation Engine - Inspired by https://libraryofbabel.info
 Implements 3-stage mathematical refinement process with Conceptual Filter.
 """
 
@@ -11,7 +11,7 @@ import numpy as np
 
 class PermutationEngine:
     """
-    Permutation Engine that replicates the logic of libraryofbabel.info.
+    Permutation Engine that replicates the logic of https://libraryofbabel.info.
     Implements a 3-stage mathematical refinement process:
     1. Initial Permutation Generation
     2. Mathematical Refinement
