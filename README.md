@@ -632,6 +632,316 @@ MNN/
 └── .gitignore             # Git ignore patterns
 ```
 
+## Containerization and Deployment
+
+### Docker
+
+#### Building the Docker Image
+
+Build the production-ready Docker image:
+
+```bash
+docker build -t mnn-pipeline:latest .
+```
+
+Build with custom database configuration:
+
+```bash
+docker build \
+  --build-arg THALOS_DB_DSN="postgresql://user:pass@host:5432/db" \
+  --build-arg THALOS_DB_CONNECT_TIMEOUT="15" \
+  -t mnn-pipeline:latest .
+```
+
+#### Running with Docker
+
+Run the container mapping port 8000:
+
+```bash
+docker run -p 8000:8000 mnn-pipeline:latest
+```
+
+Run with environment variables:
+
+```bash
+docker run -p 8000:8000 \
+  -e THALOS_DB_DSN="postgresql://user:pass@host:5432/db" \
+  -e THALOS_DB_CONNECT_TIMEOUT="15" \
+  mnn-pipeline:latest
+```
+
+The API will be available at `http://localhost:8000`. Health check endpoint at `http://localhost:8000/health`.
+
+### Docker Compose
+
+Use Docker Compose to run the full stack including PostgreSQL database:
+
+#### Starting Services
+
+```bash
+docker-compose up -d
+```
+
+This starts:
+- **api**: MNN Pipeline FastAPI service on port 8000
+- **db**: PostgreSQL 16 database on port 5432 (internal)
+
+#### Stopping Services
+
+```bash
+docker-compose down
+```
+
+To remove volumes (database data):
+
+```bash
+docker-compose down -v
+```
+
+#### Configuration
+
+Configure services using environment variables. Create a `.env` file in the project root:
+
+```env
+# PostgreSQL configuration
+POSTGRES_DB=thalos
+POSTGRES_USER=thalos
+POSTGRES_PASSWORD=your_secure_password
+POSTGRES_PORT=5432
+
+# API configuration
+API_PORT=8000
+THALOS_DB_DSN=postgresql://thalos:your_secure_password@db:5432/thalos
+THALOS_DB_CONNECT_TIMEOUT=10
+```
+
+Or pass environment variables directly:
+
+```bash
+POSTGRES_PASSWORD=mypassword docker-compose up -d
+```
+
+### Makefile Targets
+
+The project includes a Makefile for deterministic build and test operations:
+
+```bash
+# Show all available targets
+make help
+
+# Install dependencies
+make install
+
+# Run linting (py_compile)
+make lint
+
+# Run test suite
+make test
+
+# Build Docker image
+make build
+
+# Run Docker container
+make run
+
+# Start docker-compose services
+make compose-up
+
+# Stop docker-compose services
+make compose-down
+
+# Clean build artifacts
+make clean
+
+# Format code (stub - no formatter configured)
+make fmt
+```
+
+### PostgreSQL Configuration for ThalosBridge
+
+The `ThalosBridge` middleware connects to PostgreSQL for managing manifold coordinates, void logs, and encrypted weights.
+
+#### Database DSN Format
+
+Set the `THALOS_DB_DSN` environment variable with a PostgreSQL connection string:
+
+```bash
+export THALOS_DB_DSN="postgresql://username:password@hostname:port/database"
+```
+
+Examples:
+
+```bash
+# Local PostgreSQL
+export THALOS_DB_DSN="postgresql://thalos:thalos_password@localhost:5432/thalos"
+
+# Docker Compose (from host)
+export THALOS_DB_DSN="postgresql://thalos:thalos_password@localhost:5432/thalos"
+
+# Docker Compose (from api container)
+export THALOS_DB_DSN="postgresql://thalos:thalos_password@db:5432/thalos"
+
+# Remote PostgreSQL with SSL
+export THALOS_DB_DSN="postgresql://user:pass@prod-db.example.com:5432/thalos?sslmode=require"
+```
+
+#### Connection Timeout
+
+Configure connection timeout (in seconds):
+
+```bash
+export THALOS_DB_CONNECT_TIMEOUT="10"
+```
+
+#### Schema Initialization
+
+The database schemas are automatically initialized when using docker-compose. For manual setup:
+
+```bash
+psql -U thalos -d thalos -f sql/relational_buffer_schema.sql
+psql -U thalos -d thalos -f thalos_db_schema.sql
+```
+
+Or use the `ThalosBridge.apply_schema()` method:
+
+```python
+from middleware import ThalosBridge
+
+bridge = ThalosBridge()
+with bridge.connection():
+    bridge.apply_schema()
+```
+
+## Operations
+
+### Container Runtime
+
+The MNN Pipeline runs as a containerized FastAPI service designed for production deployment.
+
+#### Health Monitoring
+
+The container includes built-in health checks:
+
+```bash
+# Check health endpoint
+curl http://localhost:8000/health
+```
+
+Expected response:
+
+```json
+{
+  "status": "healthy",
+  "service": "MNN Knowledge Engine",
+  "cache_info": {
+    "pipeline_cache_size": 15,
+    "pipeline_cache_hits": 147,
+    "pipeline_cache_misses": 15
+  }
+}
+```
+
+Docker automatically monitors container health using the `/health` endpoint:
+
+- **Interval**: Check every 30 seconds
+- **Timeout**: 3 seconds per check
+- **Start period**: 5 seconds grace period
+- **Retries**: 3 failed checks before marking unhealthy
+
+View health status:
+
+```bash
+docker ps
+# Look for health status in the STATUS column
+```
+
+#### Resource Requirements
+
+Minimum recommended resources:
+
+- **CPU**: 1 core
+- **Memory**: 512 MB (1 GB recommended)
+- **Disk**: 500 MB for image, additional for PostgreSQL data volume
+
+#### Logs and Monitoring
+
+View container logs:
+
+```bash
+# Docker run
+docker logs <container_name>
+
+# Docker Compose
+docker-compose logs api
+docker-compose logs db
+
+# Follow logs in real-time
+docker-compose logs -f api
+```
+
+#### Production Considerations
+
+For production deployments:
+
+1. **Use environment-specific configuration files**
+   - Create `.env.production` with secure credentials
+   - Never commit sensitive credentials to version control
+
+2. **Enable HTTPS/TLS**
+   - Deploy behind a reverse proxy (nginx, traefik)
+   - Configure SSL certificates
+   - Set up rate limiting
+
+3. **Database security**
+   - Use strong passwords (not default values)
+   - Enable SSL for database connections
+   - Regular backups of PostgreSQL data volume
+
+4. **Monitoring and alerting**
+   - Monitor health endpoint periodically
+   - Set up alerts for container restarts
+   - Track API response times
+
+5. **Scaling**
+   - Run multiple API containers behind a load balancer
+   - Use connection pooling for PostgreSQL
+   - Consider read replicas for database scaling
+
+#### Troubleshooting
+
+**API not responding:**
+```bash
+# Check if container is running
+docker ps
+
+# Check logs for errors
+docker logs mnn-pipeline
+
+# Verify health endpoint
+curl http://localhost:8000/health
+```
+
+**Database connection errors:**
+```bash
+# Verify PostgreSQL is running
+docker-compose ps db
+
+# Check database logs
+docker-compose logs db
+
+# Test connection manually
+psql -h localhost -U thalos -d thalos
+```
+
+**Permission errors:**
+```bash
+# Ensure directories are readable
+chmod -R 755 mnn_pipeline/
+
+# Check file ownership
+ls -la mnn_pipeline/
+```
+
 ## License
 
 MIT License - See LICENSE file for details.

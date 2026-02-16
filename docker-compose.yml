@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  # PostgreSQL database for ThalosBridge
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-thalos}
+      POSTGRES_USER: ${POSTGRES_USER:-thalos}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-thalos_password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./sql/relational_buffer_schema.sql:/docker-entrypoint-initdb.d/relational_buffer_schema.sql:ro
+      - ./thalos_db_schema.sql:/docker-entrypoint-initdb.d/thalos_db_schema.sql:ro
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-thalos} -d ${POSTGRES_DB:-thalos}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  # MNN Pipeline FastAPI service
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        THALOS_DB_DSN: ${THALOS_DB_DSN:-}
+        THALOS_DB_CONNECT_TIMEOUT: ${THALOS_DB_CONNECT_TIMEOUT:-10}
+    environment:
+      THALOS_DB_DSN: ${THALOS_DB_DSN:-postgresql://thalos:thalos_password@db:5432/thalos}
+      THALOS_DB_CONNECT_TIMEOUT: ${THALOS_DB_CONNECT_TIMEOUT:-10}
+      THALOS_HARDWARE_ID: ${THALOS_HARDWARE_ID:-}
+      MNN_API_HOST: ${MNN_API_HOST:-0.0.0.0}
+      MNN_API_PORT: ${MNN_API_PORT:-8000}
+    ports:
+      - "${API_PORT:-8000}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()\""]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  postgres_data:
+    driver: local
