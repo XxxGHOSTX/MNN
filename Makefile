@@ -45,7 +45,7 @@ test:
 # Run Docker smoke test
 smoke:
 	@echo "Running Docker smoke test..."
-	@set -euo pipefail; \
+	@bash -c 'set -euo pipefail; \
 	echo "Building Docker image..."; \
 	docker build -t mnn:local . && \
 	echo "Starting container..."; \
@@ -53,11 +53,11 @@ smoke:
 	echo "Waiting for container to be ready..."; \
 	sleep 5 && \
 	echo "Testing API endpoint..."; \
-	curl -X POST http://localhost:8000/query -H "Content-Type: application/json" -d '{"query":"hello"}' && \
+	curl -X POST http://localhost:8000/query -H "Content-Type: application/json" -d '"'"'{"query":"hello"}'"'"' && \
 	echo "" && \
 	echo "Stopping container..."; \
 	docker stop mnn_api && \
-	echo "Smoke test passed!"
+	echo "Smoke test passed!"'
 
 # Build Docker image
 build:
