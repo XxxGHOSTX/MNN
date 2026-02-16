@@ -56,3 +56,5 @@ htmlcov/
 *.log
 *.tmp
 /tmp/
+mnn/__pycache__/
+mnn/tests/__pycache__/
