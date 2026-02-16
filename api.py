@@ -25,6 +25,9 @@ from security import (
     validate_query_security,
     generate_request_id,
 )
+from observability import generate_event_id, set_event_id, get_event_id
+from metrics import get_metrics_snapshot, update_cache_stats, record_request, increment_counter
+from guardrails import validate_full_query, ValidationError, sanitize_error_message
 
 # Configure logging
 setup_logging(log_level=config.LOG_LEVEL, log_format=config.LOG_FORMAT)
@@ -109,21 +112,25 @@ class QueryResponse(BaseModel):
         query: The original query (normalized)
         results: List of top 5 results with sequences and scores
         count: Number of results returned
+        timings: Stage-level timing information
+        event_id: Deterministic event ID for tracking
     """
     query: str = Field(..., description="Normalized query")
     results: List[Dict[str, Any]] = Field(..., description="Top ranked results")
     count: int = Field(..., description="Number of results returned")
+    timings: Dict[str, float] = Field(default_factory=dict, description="Stage timings in ms")
+    event_id: str = Field(..., description="Deterministic event ID")
 
 
-def _cached_execute_api_pipeline(query: str) -> List[Dict[str, Any]]:
+def _cached_execute_api_pipeline(query: str) -> Dict[str, Any]:
     """Internal cached pipeline execution for API. Do not call directly."""
-    return _execute_pipeline(query, top_n=5)
+    return _execute_pipeline(query, top_n=5, enable_checkpointing=os.getenv("ENABLE_CHECKPOINTING", "false").lower() == "true")
 
 # Apply lru_cache to the internal function
 _cached_execute_api_pipeline = lru_cache(maxsize=256)(_cached_execute_api_pipeline)
 
 
-def cached_pipeline(query: str) -> List[Dict[str, Any]]:
+def cached_pipeline(query: str) -> Dict[str, Any]:
     """
     Cached wrapper for the MNN pipeline.
     
@@ -139,12 +146,24 @@ def cached_pipeline(query: str) -> List[Dict[str, Any]]:
         query: The user's search query
         
     Returns:
-        List of top 5 ranked results (deep copy to prevent cache corruption)
+        Dictionary with results, timings, event_id, normalized_query
+        (deep copy to prevent cache corruption)
     """
     # Get cached result and return a deep copy
     # Deep copy happens on every call, not just on cache miss
     import copy
-    return copy.deepcopy(_cached_execute_api_pipeline(query))
+    result = copy.deepcopy(_cached_execute_api_pipeline(query))
+    
+    # Update cache stats for monitoring
+    cache_info = _cached_execute_api_pipeline.cache_info()
+    update_cache_stats("api_cache", {
+        "hits": cache_info.hits,
+        "misses": cache_info.misses,
+        "currsize": cache_info.currsize,
+        "maxsize": cache_info.maxsize,
+    })
+    
+    return result
 
 
 @app.get("/")
@@ -216,41 +235,92 @@ def query_endpoint(request: QueryRequest, http_request: Request):
         # Validate query is not empty or whitespace-only
         if not request.query or not request.query.strip():
             logger.warning(f"Empty query from {client_host}")
+            increment_counter("queries.errors.empty")
             raise HTTPException(status_code=400, detail="Query cannot be empty")
 
-        # Security validation
+        # Enhanced guardrails validation
+        try:
+            validate_full_query(
+                request.query,
+                min_length=1,
+                max_length=config.MAX_QUERY_LENGTH
+            )
+        except ValidationError as e:
+            logger.warning(f"Validation error from {client_host}: {str(e)}")
+            increment_counter("queries.errors.validation")
+            raise HTTPException(
+                status_code=400,
+                detail=sanitize_error_message(str(e))
+            )
+
+        # Security validation (legacy)
         validate_query_security(request.query, max_length=config.MAX_QUERY_LENGTH)
 
         # Execute cached pipeline (will raise ValueError if normalized query is empty)
         try:
-            results = cached_pipeline(request.query)
+            pipeline_result = cached_pipeline(request.query)
+            results = pipeline_result["results"]
+            timings = pipeline_result["timings"]
+            event_id = pipeline_result["event_id"]
+            normalized = pipeline_result["normalized_query"]
+            
+            # Record request metadata (no PII)
+            record_request({
+                "event_id": event_id,
+                "query_length": len(request.query),
+                "normalized_length": len(normalized),
+                "result_count": len(results),
+                "total_ms": timings.get("total_ms", 0),
+            })
+            
             logger.info(f"Query processed successfully, returned {len(results)} results")
+            
+            return QueryResponse(
+                query=normalized,
+                results=results,
+                count=len(results),
+                timings=timings,
+                event_id=event_id,
+            )
         except ValueError as ve:
-            # Handle empty normalized pattern
+            # Handle empty normalized pattern or other value errors
             logger.warning(f"Invalid query after normalization: {ve}")
-            raise HTTPException(status_code=400, detail=str(ve))
-
-        # Get normalized query for response
-        normalized = normalize_query(request.query)
-
-        # Build response
-        return QueryResponse(
-            query=normalized,
-            results=results,
-            count=len(results)
-        )
+            increment_counter("queries.errors.invalid")
+            raise HTTPException(
+                status_code=400,
+                detail=sanitize_error_message(str(ve))
+            )
 
     except HTTPException:
-        # Re-raise HTTP exceptions
+        # Re-raise HTTP exceptions as-is
         raise
     except Exception as e:
-        # Log the full exception internally for debugging
-        logger.error(f"Pipeline execution failed for query: {request.query}", exc_info=True)
-        # Return generic error message to client
+        # Catch-all for unexpected errors
+        logger.error(f"Unexpected error processing query: {e}", exc_info=True)
+        increment_counter("queries.errors.internal")
         raise HTTPException(
             status_code=500,
-            detail="Pipeline execution failed. Please try again or contact support."
+            detail="Internal server error processing query"
         )
+
+
+@app.get("/metricsz", tags=["monitoring"])
+def metrics_endpoint():
+    """
+    Metrics snapshot endpoint.
+    
+    Returns a snapshot of current metrics including:
+    - Request counters (total, success, errors)
+    - Timing statistics (min, max, avg, percentiles)
+    - Cache hit rates and sizes
+    - Recent request metadata (limited, no PII)
+    
+    This endpoint is deterministic and safe for monitoring systems.
+    
+    Returns:
+        Dictionary with current metrics snapshot
+    """
+    return get_metrics_snapshot()
 
 
 @app.get("/health", tags=["monitoring"])
