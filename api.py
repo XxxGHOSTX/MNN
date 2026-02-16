@@ -544,7 +544,7 @@ def feedback_statistics():
 
 
 @app.get("/suggestions", tags=["feedback"])
-def query_suggestions(query: str = Field(..., min_length=1, description="Current query")):
+def query_suggestions(query: str):
     """
     Get query suggestions based on feedback history.
     
@@ -585,7 +585,7 @@ def query_suggestions(query: str = Field(..., min_length=1, description="Current
 
 
 @app.get("/query/performance", tags=["feedback"])
-def query_performance(query: str = Field(..., min_length=1, description="Query to analyze")):
+def query_performance(query: str):
     """
     Analyze query performance based on user feedback.
     
