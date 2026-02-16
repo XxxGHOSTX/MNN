@@ -62,15 +62,15 @@ run:
 
 # Start docker-compose services
 compose-up:
-	@echo "Starting services with docker-compose..."
-	docker-compose up -d
+	@echo "Starting services with docker compose..."
+	docker compose up -d
 	@echo "Services started. API available at http://localhost:8000"
 	@echo "Use 'make compose-down' to stop services."
 
 # Stop docker-compose services
 compose-down:
-	@echo "Stopping services with docker-compose..."
-	docker-compose down
+	@echo "Stopping services with docker compose..."
+	docker compose down
 	@echo "Services stopped."
 
 # Clean build artifacts
