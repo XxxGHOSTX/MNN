@@ -753,9 +753,11 @@ make compose-down
 # Clean build artifacts
 make clean
 
-# Format code (stub - no formatter configured)
+# Format code (placeholder - configure black/ruff to enable)
 make fmt
 ```
+
+The `fmt` target is a placeholder for future code formatting integration. To enable it, install a formatter like `black` or `ruff` and update the Makefile target.
 
 ### PostgreSQL Configuration for ThalosBridge
 

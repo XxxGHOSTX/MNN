@@ -73,12 +73,18 @@ jobs:
         run: |
           docker build -t mnn-pipeline:test .
       
+      - name: Create Docker network
+        run: |
+          docker network create mnn-test-network
+      
       - name: Run container
         run: |
           docker run -d \
             --name mnn-test \
+            --network mnn-test-network \
             -p 8000:8000 \
-            -e THALOS_DB_DSN="postgresql://thalos:thalos_password@172.17.0.1:5432/thalos" \
+            -e THALOS_DB_DSN="postgresql://thalos:thalos_password@host.docker.internal:5432/thalos" \
+            --add-host host.docker.internal:host-gateway \
             mnn-pipeline:test
       
       - name: Wait for API to be ready

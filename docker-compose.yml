@@ -41,11 +41,11 @@ services:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()\""]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
-      timeout: 5s
+      timeout: 3s
       retries: 3
-      start_period: 10s
+      start_period: 10s  # Longer than Dockerfile (5s) to account for database dependency
 
 volumes:
   postgres_data:
