@@ -4,11 +4,9 @@ Security middleware and utilities for MNN Pipeline API.
 Provides authentication, rate limiting, and security headers.
 """
 import time
-import hashlib
 import secrets
 from typing import Dict, Optional, Callable
 from collections import defaultdict, deque
-from datetime import datetime, timedelta
 from fastapi import Request, HTTPException, status
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
