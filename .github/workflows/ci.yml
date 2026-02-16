@@ -103,14 +103,24 @@ jobs:
         run: |
           docker network create mnn-test-network
       
+      - name: Connect postgres service to custom network
+        run: |
+          # Find and connect the postgres service container to our custom network
+          POSTGRES_CONTAINER=$(docker ps --filter "ancestor=postgres:16-alpine" --format "{{.ID}}")
+          if [ -n "$POSTGRES_CONTAINER" ]; then
+            echo "Connecting postgres container $POSTGRES_CONTAINER to mnn-test-network"
+            docker network connect mnn-test-network $POSTGRES_CONTAINER --alias postgres
+          else
+            echo "Warning: postgres container not found"
+          fi
+      
       - name: Run container
         run: |
           docker run -d \
             --name mnn-test \
             --network mnn-test-network \
             -p 8000:8000 \
-            -e THALOS_DB_DSN="postgresql://thalos:thalos_password@host.docker.internal:5432/thalos" \
-            --add-host host.docker.internal:host-gateway \
+            -e THALOS_DB_DSN="postgresql://thalos:thalos_password@postgres:5432/thalos" \
             mnn-pipeline:test
       
       - name: Wait for API to be ready
