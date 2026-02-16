@@ -43,7 +43,7 @@ logger = get_logger(__name__)
 app = FastAPI(
     title="MNN Knowledge Engine API",
     description="Deterministic knowledge engine inspired by Library of Babel",
-    version="1.0.0",
+    version="2.0.0",  # Incremented for JWT/OAuth2 support
     docs_url="/docs",
     redoc_url="/redoc",
     openapi_tags=[
@@ -205,10 +205,13 @@ def root():
     """
     return {
         "name": "MNN Knowledge Engine API",
-        "version": "1.0.0",
+        "version": "2.0.0",
+        "api_version": "v2",
         "description": "Deterministic knowledge engine inspired by Library of Babel",
         "endpoints": {
             "/query": "POST endpoint for submitting queries",
+            "/v1/query": "Legacy v1 query endpoint (deprecated)",
+            "/v2/query": "Current v2 query endpoint with enhanced features",
             "/docs": "Interactive API documentation",
             "/auth/token": "POST endpoint for obtaining JWT tokens (if auth enabled)",
         },
@@ -388,12 +391,19 @@ async def get_current_user_info(current_user: User = Depends(require_auth)):
 
 
 @app.post("/query", response_model=QueryResponse, tags=["query"])
+@app.post("/v2/query", response_model=QueryResponse, tags=["query"])
 def query_endpoint(request: QueryRequest, http_request: Request):
     """
-    Query endpoint for MNN knowledge engine.
+    Query endpoint for MNN knowledge engine (v2).
 
     Accepts a query and returns the top 5 most relevant results.
     Results are deterministic: the same query always produces the same output.
+
+    Version 2 includes:
+    - JWT/OAuth2 authentication support (optional)
+    - Enhanced security validation
+    - Improved metrics tracking
+    - Feedback integration
 
     Args:
         request: QueryRequest containing the search query
@@ -408,7 +418,7 @@ def query_endpoint(request: QueryRequest, http_request: Request):
             - 500 if pipeline execution fails
 
     Examples:
-        POST /query
+        POST /query or POST /v2/query
         {
             "query": "artificial intelligence"
         }
@@ -504,6 +514,8 @@ def query_endpoint(request: QueryRequest, http_request: Request):
 
 
 @app.get("/health", tags=["monitoring"])
+@app.get("/v1/health", tags=["monitoring"], deprecated=True)
+@app.get("/v2/health", tags=["monitoring"])
 def health_check():
     """
     Health check endpoint for monitoring.
@@ -602,35 +614,71 @@ def metrics_endpoint():
 
 
 @app.get("/api/version", tags=["monitoring"])
+@app.get("/v1/version", tags=["monitoring"], deprecated=True)
+@app.get("/v2/version", tags=["monitoring"])
 def version_info():
     """
     Get API version information.
-    
+
     Returns detailed version information including:
     - API version
     - Pipeline version
     - Deployment environment
     - Feature flags
-    
+    - Breaking changes notes
+
     Returns:
         Dictionary with version details
     """
     return {
-        "api_version": "1.0.0",
+        "api_version": "2.0.0",
+        "api_version_major": 2,
+        "api_version_minor": 0,
+        "api_version_patch": 0,
         "pipeline_version": "1.0.0",
         "environment": config.ENVIRONMENT if hasattr(config, 'ENVIRONMENT') else "production",
         "features": {
             "rate_limiting": config.RATE_LIMIT_ENABLED,
             "authentication": config.API_AUTH_ENABLED,
+            "jwt_oauth2": True,
             "database": bool(config.THALOS_DB_DSN),
             "query_classification": True,
             "synonym_expansion": True,
             "user_feedback": True,
+            "api_versioning": True,
+        },
+        "endpoints": {
+            "v1": {
+                "available": True,
+                "deprecated": True,
+                "deprecation_date": "2026-02-16",
+                "sunset_date": "2026-08-16",
+                "notes": "v1 endpoints are deprecated. Please migrate to v2."
+            },
+            "v2": {
+                "available": True,
+                "current": True,
+                "added": "2026-02-16",
+                "features": [
+                    "JWT/OAuth2 authentication",
+                    "Enhanced feedback system",
+                    "Improved metrics",
+                    "API versioning"
+                ]
+            }
+        },
+        "breaking_changes": {
+            "v2.0.0": [
+                "Authentication now optional but available via JWT/OAuth2",
+                "API endpoints now support /v2/ prefix",
+                "Enhanced error responses with more detail"
+            ]
         }
     }
 
 
 @app.post("/feedback", response_model=FeedbackResponse, tags=["feedback"])
+@app.post("/v2/feedback", response_model=FeedbackResponse, tags=["feedback"])
 def submit_feedback(request: FeedbackRequest):
     """
     Submit user feedback for a query result.
