@@ -31,6 +31,9 @@ RUN apt-get update && \
 # Copy application files
 COPY api.py .
 COPY main.py .
+COPY config.py .
+COPY logging_config.py .
+COPY security.py .
 COPY middleware.py .
 COPY weight_encryptor.py .
 COPY thalos_db_schema.sql .
