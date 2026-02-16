@@ -142,9 +142,8 @@ jobs:
             echo "ERROR: Expected status 200, got $status"
             exit 1
           fi
-          # Verify response is valid JSON with expected fields
-          echo "$body" | grep -q '"results"' || { echo "ERROR: Missing 'results' field"; exit 1; }
-          echo "$body" | grep -q '"count"' || { echo "ERROR: Missing 'count' field"; exit 1; }
+          # Verify response is valid JSON and has expected structure using Python
+          echo "$body" | python3 -c "import sys, json; data = json.load(sys.stdin); assert 'results' in data and 'count' in data, 'Missing required fields'; print('✓ Valid JSON with results and count fields')"
           echo "Smoke test passed: Status 200, valid JSON response"
       
       - name: Check container logs

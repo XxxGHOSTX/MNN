@@ -727,11 +727,7 @@ THALOS_DB_DSN=postgresql://thalos:your_secure_password@db:5432/thalos
 THALOS_DB_CONNECT_TIMEOUT=10
 ```
 
-To run the API without database, omit the `THALOS_DB_DSN` variable or set it to empty:
-
-```env
-THALOS_DB_DSN=
-```
+To run the API without database, omit the `THALOS_DB_DSN` variable from your `.env` file.
 
 Or pass environment variables directly:
 

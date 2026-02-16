@@ -51,10 +51,27 @@ smoke:
 	echo "Starting container..."; \
 	docker run --rm -d -p 8000:8000 --name mnn_api mnn:local && \
 	echo "Waiting for container to be ready..."; \
-	sleep 5 && \
+	for i in {1..30}; do \
+		if curl -s http://localhost:8000/health > /dev/null 2>&1; then \
+			echo "API is healthy!"; \
+			break; \
+		fi; \
+		echo "Attempt $$i/30: Waiting for API..."; \
+		sleep 1; \
+	done && \
 	echo "Testing API endpoint..."; \
-	curl -X POST http://localhost:8000/query -H "Content-Type: application/json" -d '"'"'{"query":"hello"}'"'"' && \
-	echo "" && \
+	response=$$(curl -s -w "\n%{http_code}" -X POST http://localhost:8000/query \
+		-H "Content-Type: application/json" \
+		-d "{\"query\":\"hello\"}") && \
+	body=$$(echo "$$response" | head -n -1) && \
+	status=$$(echo "$$response" | tail -n 1) && \
+	echo "Response: $$body" && \
+	echo "Status: $$status" && \
+	if [ "$$status" != "200" ]; then \
+		echo "ERROR: Expected status 200, got $$status"; \
+		docker stop mnn_api; \
+		exit 1; \
+	fi && \
 	echo "Stopping container..."; \
 	docker stop mnn_api && \
 	echo "Smoke test passed!"'
