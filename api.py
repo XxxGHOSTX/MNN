@@ -37,7 +37,12 @@ class QueryRequest(BaseModel):
     Attributes:
         query: The search query string (required, non-empty)
     """
-    query: str = Field(..., min_length=1, description="Search query string")
+    query: str = Field(
+        ...,
+        min_length=1,
+        max_length=1000,
+        description="Search query string (max 1000 characters)",
+    )
 
 
 class QueryResponse(BaseModel):
