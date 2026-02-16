@@ -10,8 +10,9 @@ import os
 from functools import lru_cache
 from typing import List, Dict, Any, Optional
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel, Field
 
 from main import _execute_pipeline
@@ -24,6 +25,13 @@ from security import (
     RateLimitMiddleware,
     validate_query_security,
     generate_request_id,
+)
+from auth import (
+    get_auth_service,
+    get_current_user,
+    require_auth,
+    Token,
+    User,
 )
 
 # Configure logging
@@ -40,12 +48,20 @@ app = FastAPI(
     redoc_url="/redoc",
     openapi_tags=[
         {
+            "name": "authentication",
+            "description": "JWT/OAuth2 authentication operations",
+        },
+        {
             "name": "query",
             "description": "Query operations for knowledge extraction",
         },
         {
             "name": "monitoring",
             "description": "Health check and monitoring endpoints",
+        },
+        {
+            "name": "feedback",
+            "description": "User feedback and query suggestions",
         },
     ],
 )
@@ -183,7 +199,7 @@ def cached_pipeline(query: str) -> List[Dict[str, Any]]:
 def root():
     """
     Root endpoint providing API information.
-    
+
     Returns:
         Dictionary with API name, version, and usage instructions
     """
@@ -194,12 +210,181 @@ def root():
         "endpoints": {
             "/query": "POST endpoint for submitting queries",
             "/docs": "Interactive API documentation",
+            "/auth/token": "POST endpoint for obtaining JWT tokens (if auth enabled)",
+        },
+        "authentication": {
+            "enabled": config.API_AUTH_ENABLED,
+            "type": "JWT/OAuth2" if config.API_AUTH_ENABLED else "None",
         },
         "example": {
             "curl": 'curl -X POST "http://localhost:8000/query" -H "Content-Type: application/json" -d \'{"query":"artificial intelligence"}\'',
             "python": 'import requests; response = requests.post("http://localhost:8000/query", json={"query": "artificial intelligence"})',
         }
     }
+
+
+@app.post("/auth/token", response_model=Token, tags=["authentication"])
+async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    """
+    OAuth2 compatible token login endpoint.
+
+    Authenticates user with username and password, returns JWT access and refresh tokens.
+
+    Args:
+        form_data: OAuth2 password form with username and password
+
+    Returns:
+        Token object with access_token, refresh_token, and metadata
+
+    Raises:
+        HTTPException 401: If credentials are invalid
+
+    Example:
+        POST /auth/token
+        Content-Type: application/x-www-form-urlencoded
+
+        username=user&password=user123
+
+        Response:
+        {
+            "access_token": "eyJhbGc...",
+            "refresh_token": "eyJhbGc...",
+            "token_type": "bearer",
+            "expires_in": 1800
+        }
+    """
+    auth_service = get_auth_service()
+    user = auth_service.authenticate_user(form_data.username, form_data.password)
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # Create tokens
+    access_token = auth_service.create_access_token(
+        data={
+            "sub": user.username,
+            "user_id": user.username,
+            "roles": user.roles
+        }
+    )
+    refresh_token = auth_service.create_refresh_token(user.username)
+
+    logger.info(f"User '{user.username}' logged in successfully")
+
+    return Token(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        token_type="bearer",
+        expires_in=config.ACCESS_TOKEN_EXPIRE_MINUTES * 60
+    )
+
+
+@app.post("/auth/refresh", tags=["authentication"])
+async def refresh_token(refresh_token: str):
+    """
+    Refresh access token using refresh token.
+
+    Args:
+        refresh_token: Valid refresh token (in request body)
+
+    Returns:
+        Dictionary with new access token
+
+    Raises:
+        HTTPException 401: If refresh token is invalid or expired
+
+    Example:
+        POST /auth/refresh
+        Content-Type: application/json
+
+        {
+            "refresh_token": "eyJhbGc..."
+        }
+
+        Response:
+        {
+            "access_token": "eyJhbGc...",
+            "token_type": "bearer"
+        }
+    """
+    auth_service = get_auth_service()
+    new_access_token = auth_service.refresh_access_token(refresh_token)
+
+    if not new_access_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired refresh token"
+        )
+
+    return {
+        "access_token": new_access_token,
+        "token_type": "bearer"
+    }
+
+
+@app.post("/auth/revoke", tags=["authentication"])
+async def revoke_token(refresh_token: str, current_user: User = Depends(require_auth)):
+    """
+    Revoke a refresh token (logout).
+
+    Requires authentication.
+
+    Args:
+        refresh_token: Refresh token to revoke
+        current_user: Current authenticated user
+
+    Returns:
+        Success message
+
+    Example:
+        POST /auth/revoke
+        Authorization: Bearer <access_token>
+        Content-Type: application/json
+
+        {
+            "refresh_token": "eyJhbGc..."
+        }
+    """
+    auth_service = get_auth_service()
+    revoked = auth_service.revoke_refresh_token(refresh_token)
+
+    return {
+        "success": revoked,
+        "message": "Token revoked successfully" if revoked else "Token not found"
+    }
+
+
+@app.get("/auth/me", response_model=User, tags=["authentication"])
+async def get_current_user_info(current_user: User = Depends(require_auth)):
+    """
+    Get current authenticated user information.
+
+    Requires authentication.
+
+    Args:
+        current_user: Current authenticated user from JWT token
+
+    Returns:
+        User object with username, email, roles, etc.
+
+    Example:
+        GET /auth/me
+        Authorization: Bearer <access_token>
+
+        Response:
+        {
+            "username": "user",
+            "email": "user@mnn.local",
+            "full_name": "Regular User",
+            "disabled": false,
+            "roles": ["user"]
+        }
+    """
+    return current_user
 
 
 @app.post("/query", response_model=QueryResponse, tags=["query"])
