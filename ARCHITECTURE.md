@@ -6,7 +6,7 @@ The MNN (Matrix Neural Network) Pipeline is a deterministic, constraint-driven k
 
 ## The Library of Babel Problem
 
-The website libraryofbabel.info demonstrates an interesting but impractical concept: a library containing every possible combination of characters, which theoretically contains all knowledge but is impossible to search meaningfully because it's 99.999% noise.
+The website https://libraryofbabel.info demonstrates an interesting but impractical concept: a library containing every possible combination of characters, which theoretically contains all knowledge but is impossible to search meaningfully because it's 99.999% noise.
 
 ## MNN's Solution: Constraint-Driven Determinism
 

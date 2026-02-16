@@ -20,7 +20,7 @@ python examples/operational_sequence.py
 ```
 
 This demonstrates the complete workflow:
-1. PRNG initialization with libraryofbabel.info logic
+1. PRNG initialization with https://libraryofbabel.info logic
 2. Semantic Sieve filtering (99.999% noise removal)
 3. Matrix Neural Network training with encrypted weights
 4. THALOS chatbot deployment with PostgreSQL buffer
@@ -221,7 +221,7 @@ print("THALOS pipeline complete!")
 ├─────────────────────────────────────────────────────────┤
 │                                                          │
 │  ┌────────────────────────────────────────────────┐    │
-│  │  Permutation Engine (libraryofbabel.info)      │    │
+│  │  Permutation Engine (https://libraryofbabel.info)      │    │
 │  │  • Stage 1: Permutation Generation             │    │
 │  │  • Stage 2: Mathematical Refinement            │    │
 │  │  • Stage 3: Conceptual Filtering               │    │
