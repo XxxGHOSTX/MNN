@@ -15,7 +15,7 @@ pytest-cov==5.0.0
 
 # Production dependencies (optional but recommended)
 # Form data support (required for OAuth2)
-python-multipart==0.0.9
+python-multipart==0.0.22  # Updated for security fixes (CVE patched)
 
 # Authentication dependencies
 python-jose[cryptography]==3.3.0  # For JWT tokens
