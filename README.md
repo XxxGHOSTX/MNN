@@ -586,6 +586,220 @@ Query the MNN knowledge engine.
 
 **Status Codes:**
 - `200`: Success
+- `400`: Invalid query (empty, whitespace only, too long, or exceeds processing limits)
+- `422`: Validation error (missing query field or invalid format)
+- `500`: Pipeline execution error
+
+### GET /metrics
+
+Observability metrics endpoint.
+
+**Response:**
+```json
+{
+  "request_count": 42,
+  "error_count": 1,
+  "cache_hits": 30,
+  "cache_misses": 12,
+  "cache_hit_rate": 0.714,
+  "last_stage_durations": {
+    "analyze": 0.001234,
+    "constraints": 0.000567,
+    "generate": 0.002345,
+    "indices": 0.000789,
+    "output": 0.000012,
+    "score": 0.001567
+  },
+  "avg_stage_durations": {
+    "analyze": 0.001456,
+    "constraints": 0.000623,
+    "generate": 0.002567,
+    "indices": 0.000812,
+    "output": 0.000015,
+    "score": 0.001678
+  },
+  "lru_cache_info": {
+    "size": 15,
+    "maxsize": 256,
+    "hits": 147,
+    "misses": 15
+  }
+}
+```
+
+**Metrics Description:**
+- `request_count`: Total number of requests processed
+- `error_count`: Total number of errors encountered
+- `cache_hits`: Number of cache hits
+- `cache_misses`: Number of cache misses
+- `cache_hit_rate`: Cache hit rate (0.0-1.0)
+- `last_stage_durations`: Duration of last pipeline execution per stage (seconds)
+- `avg_stage_durations`: Average duration per stage across recent executions (seconds)
+- `lru_cache_info`: LRU cache statistics
+
+### GET /health
+
+Health check and cache statistics.
+
+**Response:**
+```json
+{
+  "status": "healthy",
+  "service": "MNN Knowledge Engine",
+  "cache_info": {
+    "pipeline_cache_size": 15,
+    "pipeline_cache_hits": 147,
+    "pipeline_cache_misses": 15
+  }
+}
+```
+
+## Observability and Guardrails
+
+### Structured Logging
+
+The MNN pipeline includes structured JSONL logging for observability. Each pipeline stage is logged with:
+- Event ID (deterministic UUID5 from normalized query)
+- Stage name (normalize, constraints, indices, generate, analyze, score, output)
+- Action (start, complete, error)
+- Duration (for complete/error actions)
+- Stage-specific data
+
+**Example Log Entry:**
+```json
+{
+  "timestamp": "2026-02-16T13:22:13.915260Z",
+  "event_type": "pipeline_stage",
+  "event_id": "646a1a96-5264-5932-93fe-1c6c151a3446",
+  "stage": "indices",
+  "action": "complete",
+  "query": "information theory",
+  "duration_seconds": 0.000022,
+  "data": {"indices_count": 1000}
+}
+```
+
+**Control Logging:**
+- Set `ENABLE_PIPELINE_LOGGING=false` to disable pipeline stage logging
+- Logging is enabled by default
+
+### Checkpoint Writing
+
+Optional checkpoint writing saves intermediate pipeline results for debugging and auditing.
+
+**Enable Checkpoints:**
+```bash
+export ENABLE_CHECKPOINTS=true
+export CHECKPOINT_DIR=checkpoints  # Optional, defaults to "checkpoints"
+```
+
+**Checkpoint Files:**
+Checkpoints are written with deterministic filenames: `{event_id}_{step}.json`
+
+Example checkpoint structure:
+```json
+{
+  "event_id": "646a1a96-5264-5932-93fe-1c6c151a3446",
+  "step": "constraints",
+  "timestamp": "2026-02-16T13:22:13.915Z",
+  "data": {
+    "pattern": "INFORMATION THEORY",
+    "min_length": 18,
+    "max_length": 68
+  }
+}
+```
+
+**Available Checkpoint Steps:**
+- `constraints`: Constraint generation output
+- `indices`: First 100 indices (limited for file size)
+- `results`: Final ranked results
+
+### Guardrails and Limits
+
+The API enforces several guardrails to ensure system stability:
+
+**Query Length Limits:**
+- Minimum: 1 character (configurable via `MIN_QUERY_LENGTH`)
+- Maximum: 2000 characters (configurable via `MAX_QUERY_LENGTH`)
+- Queries outside these bounds return HTTP 400/422
+
+**Processing Limits:**
+- Maximum sequences per request: 1000 (configurable via `MAX_SEQUENCES_PER_REQUEST`)
+- Maximum indices per request: 1000 (configurable via `MAX_INDICES_PER_REQUEST`)
+- Exceeding these limits returns HTTP 400 with deterministic error message
+
+**Security Validations:**
+- No control characters allowed (except tab, newline)
+- Excessive character repetition rejected (potential DoS)
+- Error messages sanitized (no stack traces exposed to clients)
+
+### Configuration
+
+All configuration is managed via environment variables:
+
+**API Configuration:**
+```bash
+MNN_API_HOST=127.0.0.1          # API host (default: 127.0.0.1)
+MNN_API_PORT=8000                # API port (default: 8000)
+```
+
+**Security and Guardrails:**
+```bash
+MAX_QUERY_LENGTH=2000            # Maximum query length in characters (default: 2000)
+MIN_QUERY_LENGTH=1               # Minimum query length in characters (default: 1)
+MAX_SEQUENCES_PER_REQUEST=1000   # Maximum sequences per request (default: 1000)
+MAX_INDICES_PER_REQUEST=1000     # Maximum indices per request (default: 1000)
+
+RATE_LIMIT_ENABLED=false         # Enable rate limiting (default: false)
+RATE_LIMIT_REQUESTS=100          # Max requests per window (default: 100)
+RATE_LIMIT_WINDOW=60             # Rate limit window in seconds (default: 60)
+```
+
+**Observability:**
+```bash
+ENABLE_PIPELINE_LOGGING=true     # Enable structured pipeline logging (default: true)
+ENABLE_CHECKPOINTS=false         # Enable checkpoint writing (default: false)
+CHECKPOINT_DIR=checkpoints       # Checkpoint directory (default: "checkpoints")
+
+LOG_LEVEL=INFO                   # Logging level (default: INFO)
+LOG_FORMAT=json                  # Log format: json or text (default: json)
+```
+
+**Cache Configuration:**
+```bash
+CACHE_SIZE=256                   # LRU cache size (default: 256)
+```
+
+**Database Configuration (Optional):**
+```bash
+THALOS_DB_DSN=                   # PostgreSQL connection string (optional)
+THALOS_DB_CONNECT_TIMEOUT=10     # DB connect timeout in seconds (default: 10)
+THALOS_HARDWARE_ID=              # Hardware ID for encryption (optional)
+```
+
+**Example .env File:**
+```bash
+# API Configuration
+MNN_API_HOST=0.0.0.0
+MNN_API_PORT=8000
+
+# Guardrails
+MAX_QUERY_LENGTH=2000
+MAX_SEQUENCES_PER_REQUEST=1000
+
+# Observability
+ENABLE_PIPELINE_LOGGING=true
+ENABLE_CHECKPOINTS=true
+CHECKPOINT_DIR=./checkpoints
+
+# Logging
+LOG_LEVEL=INFO
+LOG_FORMAT=json
+```
+
+**Status Codes:**
+- `200`: Success
 - `400`: Invalid query (empty or whitespace only)
 - `422`: Validation error (missing query field)
 - `500`: Pipeline execution error

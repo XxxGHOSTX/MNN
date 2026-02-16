@@ -58,3 +58,6 @@ htmlcov/
 /tmp/
 mnn/__pycache__/
 mnn/tests/__pycache__/
+
+# Checkpoints (observability feature)
+checkpoints/
