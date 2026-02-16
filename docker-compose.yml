@@ -1,7 +1,7 @@
 services:
   # PostgreSQL database for ThalosBridge
   db:
-    image: postgres:16-alpine
+    image: postgres:16
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-thalos}
       POSTGRES_USER: ${POSTGRES_USER:-thalos}
@@ -29,23 +29,20 @@ services:
         THALOS_DB_DSN: ${THALOS_DB_DSN:-}
         THALOS_DB_CONNECT_TIMEOUT: ${THALOS_DB_CONNECT_TIMEOUT:-10}
     environment:
-      THALOS_DB_DSN: ${THALOS_DB_DSN:-postgresql://thalos:thalos_password@db:5432/thalos}
+      THALOS_DB_DSN: ${THALOS_DB_DSN:-}
       THALOS_DB_CONNECT_TIMEOUT: ${THALOS_DB_CONNECT_TIMEOUT:-10}
       THALOS_HARDWARE_ID: ${THALOS_HARDWARE_ID:-}
       MNN_API_HOST: ${MNN_API_HOST:-0.0.0.0}
       MNN_API_PORT: ${MNN_API_PORT:-8000}
     ports:
       - "${API_PORT:-8000}:8000"
-    depends_on:
-      db:
-        condition: service_healthy
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 3s
       retries: 3
-      start_period: 10s  # Longer than Dockerfile (5s) to account for database dependency
+      start_period: 10s
 
 volumes:
   postgres_data:

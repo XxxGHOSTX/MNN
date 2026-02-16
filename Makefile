@@ -1,4 +1,4 @@
-.PHONY: help install lint test build run compose-up compose-down clean fmt
+.PHONY: help install lint test smoke build run compose-up compose-down clean fmt
 
 # Default target
 help:
@@ -7,6 +7,7 @@ help:
 	@echo "install        - Install Python dependencies (optionally in venv)"
 	@echo "lint           - Run linting (py_compile on all Python sources)"
 	@echo "test           - Run test suite with pytest"
+	@echo "smoke          - Run Docker smoke test (build, run, test, cleanup)"
 	@echo "build          - Build Docker image"
 	@echo "run            - Run Docker container (single instance)"
 	@echo "compose-up     - Start services with docker compose"
@@ -32,6 +33,7 @@ install:
 # Lint Python sources
 lint:
 	@echo "Linting Python sources..."
+	@python -m compileall .
 	@python -m py_compile api.py
 	@python -m py_compile main.py
 	@python -m py_compile middleware.py
@@ -47,13 +49,47 @@ lint:
 # Run tests
 test:
 	@echo "Running test suite..."
-	@python -m unittest discover tests -v
+	@python -m pytest
 	@echo "Tests complete."
+
+# Run Docker smoke test
+smoke:
+	@echo "Running Docker smoke test..."
+	@bash -c 'set -euo pipefail; \
+	echo "Building Docker image..."; \
+	docker build -t mnn:local . && \
+	echo "Starting container..."; \
+	docker run --rm -d -p 8000:8000 --name mnn_api mnn:local && \
+	echo "Waiting for container to be ready..."; \
+	for i in {1..30}; do \
+		if curl -s http://localhost:8000/health > /dev/null 2>&1; then \
+			echo "API is healthy!"; \
+			break; \
+		fi; \
+		echo "Attempt $$i/30: Waiting for API..."; \
+		sleep 1; \
+	done && \
+	echo "Testing API endpoint..."; \
+	response=$$(curl -s -w "\n%{http_code}" -X POST http://localhost:8000/query \
+		-H "Content-Type: application/json" \
+		-d "{\"query\":\"hello\"}") && \
+	body=$$(echo "$$response" | head -n -1) && \
+	status=$$(echo "$$response" | tail -n 1) && \
+	echo "Response: $$body" && \
+	echo "Status: $$status" && \
+	if [ "$$status" != "200" ]; then \
+		echo "ERROR: Expected status 200, got $$status"; \
+		docker stop mnn_api; \
+		exit 1; \
+	fi && \
+	echo "Stopping container..."; \
+	docker stop mnn_api && \
+	echo "Smoke test passed!"'
 
 # Build Docker image
 build:
 	@echo "Building Docker image..."
-	docker build -t mnn-pipeline:latest .
+	docker build -t mnn:local .
 	@echo "Docker build complete."
 
 # Run Docker container
@@ -61,7 +97,7 @@ run:
 	@echo "Running Docker container..."
 	@echo "Container will be available at http://localhost:8000"
 	@echo "Press Ctrl+C to stop"
-	docker run --rm -p 8000:8000 --name mnn-pipeline mnn-pipeline:latest
+	docker run --rm -p 8000:8000 --name mnn-pipeline mnn:local
 
 # Start docker-compose services
 compose-up:
