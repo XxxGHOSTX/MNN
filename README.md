@@ -542,7 +542,7 @@ Response:
 
 ### Optimization Strategy
 
-1. **LRU Caching**: All deterministic functions cached
+1. **LRU Caching**: Key deterministic entry points cached (normalize_query, run_pipeline, cached_pipeline) with deep copy protection
 2. **Finite Search Space**: 1000 indices (not infinite)
 3. **Early Filtering**: Eliminate invalid sequences early
 4. **List Comprehensions**: Pythonic, optimized iteration

@@ -58,7 +58,14 @@ class QueryResponse(BaseModel):
     count: int = Field(..., description="Number of results returned")
 
 
-@lru_cache(maxsize=256)
+def _cached_execute_api_pipeline(query: str) -> List[Dict[str, Any]]:
+    """Internal cached pipeline execution for API. Do not call directly."""
+    return _execute_pipeline(query, top_n=5)
+
+# Apply lru_cache to the internal function
+_cached_execute_api_pipeline = lru_cache(maxsize=256)(_cached_execute_api_pipeline)
+
+
 def cached_pipeline(query: str) -> List[Dict[str, Any]]:
     """
     Cached wrapper for the MNN pipeline.
@@ -67,14 +74,20 @@ def cached_pipeline(query: str) -> List[Dict[str, Any]]:
     that identical queries return identical results without recomputation.
     The cache is transparent and doesn't affect determinism.
     
+    Note: Returns a deep copy of cached results to prevent cache corruption from mutations.
+    Each call returns a fresh deep copy, so mutations to returned values don't affect
+    the cache.
+    
     Args:
         query: The user's search query
         
     Returns:
-        List of top 5 ranked results
+        List of top 5 ranked results (deep copy to prevent cache corruption)
     """
-    # Use the shared pipeline function with top_n=5 for API
-    return _execute_pipeline(query, top_n=5)
+    # Get cached result and return a deep copy
+    # Deep copy happens on every call, not just on cache miss
+    import copy
+    return copy.deepcopy(_cached_execute_api_pipeline(query))
 
 
 @app.get("/")
@@ -139,17 +152,19 @@ def query_endpoint(request: QueryRequest):
         }
     """
     try:
-        # Validate query
+        # Validate query is not empty or whitespace-only
         if not request.query or not request.query.strip():
             raise HTTPException(status_code=400, detail="Query cannot be empty")
 
-        # Normalize and validate normalized query
-        normalized = normalize_query(request.query)
-        if not normalized or not normalized.strip():
-            raise HTTPException(status_code=400, detail="Query cannot be empty after normalization")
+        # Execute cached pipeline (will raise ValueError if normalized query is empty)
+        try:
+            results = cached_pipeline(request.query)
+        except ValueError as ve:
+            # Handle empty normalized pattern
+            raise HTTPException(status_code=400, detail=str(ve))
         
-        # Execute cached pipeline
-        results = cached_pipeline(request.query)
+        # Get normalized query for response
+        normalized = normalize_query(request.query)
         
         # Build response
         return QueryResponse(
@@ -183,9 +198,9 @@ def health_check():
         "status": "healthy",
         "service": "MNN Knowledge Engine",
         "cache_info": {
-            "pipeline_cache_size": cached_pipeline.cache_info().currsize,
-            "pipeline_cache_hits": cached_pipeline.cache_info().hits,
-            "pipeline_cache_misses": cached_pipeline.cache_info().misses,
+            "pipeline_cache_size": _cached_execute_api_pipeline.cache_info().currsize,
+            "pipeline_cache_hits": _cached_execute_api_pipeline.cache_info().hits,
+            "pipeline_cache_misses": _cached_execute_api_pipeline.cache_info().misses,
         }
     }
 

@@ -95,6 +95,17 @@ class TestAPIEndpoints(unittest.TestCase):
         data = response.json()
         self.assertIn('detail', data)
     
+    def test_query_endpoint_normalized_empty_query_error(self):
+        """Test that queries that normalize to empty are rejected."""
+        response = self.client.post(
+            "/query",
+            json={"query": "!!!"}
+        )
+        self.assertEqual(response.status_code, 400)
+        data = response.json()
+        self.assertIn('detail', data)
+        self.assertIn('normalization', data['detail'].lower())
+    
     def test_query_endpoint_missing_query_field(self):
         """Test that requests without query field are rejected."""
         response = self.client.post(
@@ -111,7 +122,8 @@ class TestAPIDeterminism(unittest.TestCase):
         """Set up test client and clear cache."""
         self.client = TestClient(app)
         # Clear cache before each test
-        cached_pipeline.cache_clear()
+        from api import _cached_execute_api_pipeline
+        _cached_execute_api_pipeline.cache_clear()
     
     def test_identical_queries_produce_identical_results(self):
         """Test that the same query produces the same results through API."""
@@ -140,7 +152,8 @@ class TestAPIDeterminism(unittest.TestCase):
         query = {"query": "deep learning"}
         
         # Clear cache first
-        cached_pipeline.cache_clear()
+        from api import _cached_execute_api_pipeline
+        _cached_execute_api_pipeline.cache_clear()
         
         # First request (cache miss)
         response1 = self.client.post("/query", json=query)

@@ -274,6 +274,12 @@ class TestPipelineDeterminism(unittest.TestCase):
         """Test that pipeline returns exactly top 10 results."""
         result = run_pipeline("machine learning")
         self.assertEqual(len(result), 10)
+    
+    def test_empty_normalized_query_raises_error(self):
+        """Test that queries that normalize to empty raise ValueError."""
+        with self.assertRaises(ValueError) as context:
+            run_pipeline("!!!")
+        self.assertIn("normalization", str(context.exception).lower())
 
 
 class TestOutputHandler(unittest.TestCase):

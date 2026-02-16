@@ -45,9 +45,16 @@ def _execute_pipeline(query: str, top_n: int = 10) -> List[Dict[str, Any]]:
         List of top N ranked results, each a dictionary containing:
             - 'sequence' (str): The result sequence
             - 'score' (float): Relevance score
+            
+    Raises:
+        ValueError: If the normalized query is empty
     """
     # Stage 1: Normalize query
     pattern = normalize_query(query)
+    
+    # Validate that normalization didn't result in empty pattern
+    if not pattern or not pattern.strip():
+        raise ValueError("Query cannot be empty after normalization")
     
     # Stage 2: Generate constraints
     constraints = generate_constraints(pattern)
@@ -68,7 +75,14 @@ def _execute_pipeline(query: str, top_n: int = 10) -> List[Dict[str, Any]]:
     return ranked[:top_n]
 
 
-@lru_cache(maxsize=128)
+def _cached_execute_pipeline(query: str, top_n: int) -> List[Dict[str, Any]]:
+    """Internal cached pipeline execution. Do not call directly."""
+    return _execute_pipeline(query, top_n)
+
+# Apply lru_cache to the internal function
+_cached_execute_pipeline = lru_cache(maxsize=128)(_cached_execute_pipeline)
+
+
 def run_pipeline(query: str) -> List[Dict[str, Any]]:
     """
     Execute the complete MNN pipeline for a given query with caching.
@@ -79,6 +93,10 @@ def run_pipeline(query: str) -> List[Dict[str, Any]]:
     - Fixed index mapping algorithm
     - Stable sorting with tie-breakers
     - LRU caching for performance
+    
+    Note: Returns a deep copy of cached results to prevent cache corruption from mutations.
+    Each call returns a fresh deep copy, so mutations to returned values don't affect
+    the cache.
     
     Args:
         query: The user's search query (any string)
@@ -97,8 +115,17 @@ def run_pipeline(query: str) -> List[Dict[str, Any]]:
         >>> # Determinism test
         >>> run_pipeline("test") == run_pipeline("test")
         True
+        >>> # Cache mutation protection
+        >>> r1 = run_pipeline("test")
+        >>> r1[0]['score'] = 999  # Mutate
+        >>> r2 = run_pipeline("test")
+        >>> r2[0]['score'] != 999  # Cache protected
+        True
     """
-    return _execute_pipeline(query, top_n=10)
+    # Get cached result and return a deep copy
+    # Deep copy happens on every call, not just on cache miss
+    import copy
+    return copy.deepcopy(_cached_execute_pipeline(query, 10))
 
 
 def main():

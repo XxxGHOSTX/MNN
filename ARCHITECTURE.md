@@ -205,10 +205,14 @@ assert cached_pipeline.cache_info().hits > 0  # Caching works
 ## Performance Optimizations
 
 ### 1. LRU Caching
-- `@lru_cache(maxsize=128)` on normalize_query
-- `@lru_cache(maxsize=128)` on generate_constraints  
-- `@lru_cache(maxsize=128)` on map_constraints_to_indices
-- `@lru_cache(maxsize=256)` on cached_pipeline (API)
+- `@lru_cache(maxsize=128)` on normalize_query (string input)
+- `@lru_cache(maxsize=128)` on run_pipeline (CLI wrapper with deep copy)
+- `@lru_cache(maxsize=256)` on cached_pipeline (API wrapper with deep copy)
+
+**Why Not Cache Everything?**
+- `generate_constraints` and `map_constraints_to_indices` accept/return dicts (unhashable)
+- Caching at pipeline level (with string inputs) is more effective
+- Deep copies prevent cache corruption from mutable return values
 
 ### 2. Finite Search Space
 - 1000 indices (not infinite)

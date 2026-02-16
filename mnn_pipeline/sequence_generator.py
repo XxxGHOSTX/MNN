@@ -40,11 +40,11 @@ def generate_sequences(indices: list, constraints: dict) -> list:
     sequences = []
     
     # Generate a sequence for each index
-    for idx in indices:
+    for i, idx in enumerate(indices):
         # Create contextual padding to simulate a "book" entry
-        # Pattern placement is deterministic based on index
-        # Using modulo to vary pattern position for diversity
-        position_offset = idx % 3
+        # Pattern placement is deterministic based on sequence position
+        # Using modulo of loop counter to vary pattern position for diversity
+        position_offset = i % 3
         
         if position_offset == 0:
             # Pattern near beginning
