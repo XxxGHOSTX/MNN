@@ -38,6 +38,7 @@ COPY manual_validation.py .
 COPY config.py .
 COPY logging_config.py .
 COPY security.py .
+COPY metrics.py .
 
 # Copy mnn_pipeline directory
 COPY mnn_pipeline/ ./mnn_pipeline/

@@ -10,7 +10,7 @@ import os
 from functools import lru_cache
 from typing import List, Dict, Any, Optional
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
@@ -544,7 +544,7 @@ def feedback_statistics():
 
 
 @app.get("/suggestions", tags=["feedback"])
-def query_suggestions(query: str = Field(..., min_length=1, description="Current query")):
+def query_suggestions(query: str = Query(..., min_length=1, description="Current query")):
     """
     Get query suggestions based on feedback history.
     
@@ -585,7 +585,7 @@ def query_suggestions(query: str = Field(..., min_length=1, description="Current
 
 
 @app.get("/query/performance", tags=["feedback"])
-def query_performance(query: str = Field(..., min_length=1, description="Query to analyze")):
+def query_performance(query: str = Query(..., min_length=1, description="Query to analyze")):
     """
     Analyze query performance based on user feedback.
     
