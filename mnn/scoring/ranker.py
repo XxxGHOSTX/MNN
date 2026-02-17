@@ -7,7 +7,7 @@ Provides deterministic tie-breaking for reproducible rankings.
 Author: MNN Engine Contributors
 """
 
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from mnn.ir.models import Candidate, ConstraintSchema
 
 
@@ -160,8 +160,6 @@ def score_and_rank_candidates(
         >>> len(ranked) <= 3
         True
     """
-    from typing import Optional
-    
     ranker = Ranker(schema)
     ranked = ranker.rank(candidates)
     

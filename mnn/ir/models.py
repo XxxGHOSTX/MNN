@@ -8,7 +8,7 @@ Author: MNN Engine Contributors
 """
 
 from typing import List, Set, Optional, Literal
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 
 
 class ConstraintSchema(BaseModel):
@@ -26,6 +26,8 @@ class ConstraintSchema(BaseModel):
         charset: Allowed character set (e.g., 'ascii', 'alphanumeric', 'printable')
         code_invariants: Additional invariants for code domain (brace balance, keyword presence)
     """
+    model_config = ConfigDict(frozen=True)
+    
     required_tokens: List[str] = Field(default_factory=list, description="Required tokens in output")
     domain_hints: List[str] = Field(default_factory=list, description="Domain classification hints")
     min_length: int = Field(default=1, ge=1, description="Minimum output length")
@@ -43,9 +45,6 @@ class ConstraintSchema(BaseModel):
         if 'min_length' in info.data and v < info.data['min_length']:
             raise ValueError(f"max_length ({v}) must be >= min_length ({info.data['min_length']})")
         return v
-    
-    class Config:
-        frozen = True  # Immutable for determinism
 
 
 class Candidate(BaseModel):
@@ -58,13 +57,12 @@ class Candidate(BaseModel):
         generation_step: The step number in the generation process
         metadata: Additional metadata for traceability
     """
+    model_config = ConfigDict(frozen=True)
+    
     content: str = Field(description="Candidate output content")
     seed: int = Field(description="Deterministic seed")
     generation_step: int = Field(ge=0, description="Generation step index")
     metadata: dict = Field(default_factory=dict, description="Additional metadata")
-    
-    class Config:
-        frozen = True  # Immutable for determinism
 
 
 class BreachCoordinates(BaseModel):
@@ -82,6 +80,8 @@ class BreachCoordinates(BaseModel):
         code_violations: Code-specific violations (unbalanced braces, missing keywords)
         repair_hints: Suggested repair strategies
     """
+    model_config = ConfigDict(frozen=True)
+    
     violated_constraints: List[str] = Field(default_factory=list, description="Types of violations")
     missing_tokens: List[str] = Field(default_factory=list, description="Missing required tokens")
     length_violation: Optional[Literal['too_short', 'too_long']] = Field(
@@ -106,6 +106,3 @@ class BreachCoordinates(BaseModel):
         if len(self.charset_violations) > 10:
             return False
         return True
-    
-    class Config:
-        frozen = True  # Immutable for determinism

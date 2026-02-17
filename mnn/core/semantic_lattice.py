@@ -122,30 +122,56 @@ class SemanticLattice:
             Code-like content
         """
         lines = []
-        current_length = 0
         
         # Add language-specific keywords if required
         if 'python' in self.schema.domain_hints:
+            # Add import statement
+            lines.append("import sys")
+            lines.append("")
             lines.append("def function():")
-            lines.append("    pass")
+            lines.append("    \"\"\"Function implementation.\"\"\"")
+            
+            # Try to incorporate required tokens as comments or variable names
+            for token in self.schema.required_tokens[:3]:
+                if len(token) < 20:  # Only use reasonable tokens
+                    lines.append(f"    {token} = None")
+            
+            lines.append("    return True")
+            lines.append("")
+            
+            # Add a class if needed
+            if 'class' in self.schema.code_invariants.get('require_keywords', []):
+                lines.append("class Example:")
+                lines.append("    def method(self):")
+                lines.append("        pass")
+            
         elif 'javascript' in self.schema.domain_hints:
             lines.append("function main() {")
-            lines.append("    return;")
+            
+            # Try to incorporate required tokens
+            for token in self.schema.required_tokens[:3]:
+                if len(token) < 20:
+                    lines.append(f"    const {token} = null;")
+            
+            lines.append("    return true;")
             lines.append("}")
+            
         elif 'java' in self.schema.domain_hints:
-            lines.append("public void method() {")
-            lines.append("    return;")
+            lines.append("public class Main {")
+            lines.append("    public void method() {")
+            
+            for token in self.schema.required_tokens[:3]:
+                if len(token) < 20:
+                    lines.append(f"        // {token}")
+            
+            lines.append("        return;")
+            lines.append("    }")
             lines.append("}")
+            
         else:
             # Generic code structure
-            lines.append("function main() {")
-            lines.append("    return;")
-            lines.append("}")
-        
-        # Try to incorporate required tokens
-        for token in self.schema.required_tokens:
-            if current_length < target_length // 2:
-                lines.insert(1, f"    // {token}")
+            lines.append("def function():")
+            lines.append("    pass")
         
         content = '\n'.join(lines)
         
@@ -153,9 +179,17 @@ class SemanticLattice:
         if len(content) < target_length:
             padding = target_length - len(content)
             # Add comments to reach target length
-            comment_lines = padding // 20
-            for i in range(comment_lines):
-                lines.append(f"    // comment {i}")
+            comment_lines = []
+            remaining = padding
+            while remaining > 0:
+                comment = f"# Additional comment line"
+                if remaining < len(comment) + 1:
+                    comment = comment[:remaining]
+                comment_lines.append(comment)
+                remaining -= len(comment) + 1
+            
+            if comment_lines:
+                lines.extend(comment_lines)
             content = '\n'.join(lines)
         
         return content[:target_length]
