@@ -2,6 +2,23 @@
 
 A neural network library implementing the THALOS system - a refined approach to LLM architecture inspired by https://libraryofbabel.info permutation logic.
 
+## 🆕 SMT-Arbiter "Babel Siphon" Pipeline
+
+**NEW:** Deterministic, SMT-validated content generation pipeline that ensures all outputs satisfy formal constraints.
+
+- ✓ Full determinism (same query + seed = identical outputs)
+- ✓ Z3 SMT constraint validation
+- ✓ No unvalidated noise emission
+- ✓ Automatic repair with breach detection
+- ✓ Python 3.12 compatible
+
+**Quick Start:**
+```bash
+python tools/find_coherent_page.py "hello world" --seed 42
+```
+
+See [BABEL_SIPHON_README.md](BABEL_SIPHON_README.md) for complete documentation.
+
 ## Overview
 
 THALOS (The Heuristic Algorithm for Lattice-Optimized Synthesis) implements a unique 3-stage mathematical refinement process that transforms infinite permutation space into structured, linguistically-valid neural network training data.
