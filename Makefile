@@ -42,8 +42,10 @@ lint:
 	@python -m py_compile config.py
 	@python -m py_compile logging_config.py
 	@python -m py_compile security.py
+	@find mnn -name "*.py" -exec python -m py_compile {} +
 	@find mnn_pipeline -name "*.py" -exec python -m py_compile {} +
 	@find tests -name "*.py" -exec python -m py_compile {} +
+	@find tools -name "*.py" -exec python -m py_compile {} +
 	@echo "Linting complete - no syntax errors found."
 
 # Run tests

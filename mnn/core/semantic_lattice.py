@@ -147,11 +147,14 @@ class SemanticLattice:
             
         elif 'javascript' in self.schema.domain_hints:
             lines.append("function main() {")
+            lines.append("    // JavaScript code")
             
             # Try to incorporate required tokens
             for token in self.schema.required_tokens[:3]:
-                if len(token) < 20:
+                if len(token) < 20 and token.replace('_', '').isalnum():
                     lines.append(f"    const {token} = null;")
+                else:
+                    lines.append(f"    // {token}")
             
             lines.append("    return true;")
             lines.append("}")
@@ -159,19 +162,25 @@ class SemanticLattice:
         elif 'java' in self.schema.domain_hints:
             lines.append("public class Main {")
             lines.append("    public void method() {")
+            lines.append("        // Java code")
             
             for token in self.schema.required_tokens[:3]:
-                if len(token) < 20:
-                    lines.append(f"        // {token}")
+                lines.append(f"        // {token}")
             
-            lines.append("        return;")
             lines.append("    }")
             lines.append("}")
             
         else:
             # Generic code structure
-            lines.append("def function():")
-            lines.append("    pass")
+            lines.append("function main() {")
+            lines.append("    // Generic code")
+            
+            # Add required tokens as comments
+            for token in self.schema.required_tokens[:3]:
+                lines.append(f"    // {token}")
+            
+            lines.append("    return true;")
+            lines.append("}")
         
         content = '\n'.join(lines)
         

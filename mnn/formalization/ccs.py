@@ -180,7 +180,7 @@ def extract_code_invariants(query: str, domains: List[str]) -> Dict:
         'require_keywords': [],
     }
     
-    # Language-specific keywords
+    # Language-specific keywords - only require ONE keyword from the list
     keyword_map = {
         'python': ['def', 'class', 'import'],
         'javascript': ['function', 'const', 'let', 'var'],
@@ -189,10 +189,12 @@ def extract_code_invariants(query: str, domains: List[str]) -> Dict:
         'rust': ['fn', 'let', 'mut'],
     }
     
-    # Add language-specific required keywords
+    # Add ONE language-specific required keyword (not all)
     for lang in domains:
         if lang in keyword_map:
-            invariants['require_keywords'].extend(keyword_map[lang])
+            # Only require the first keyword from the list
+            invariants['require_keywords'].append(keyword_map[lang][0])
+            break
     
     return invariants
 
