@@ -190,11 +190,15 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Prepare lowercase image name
+        id: image_name
+        run: echo "image_repo=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/mnn-pipeline" >> "$GITHUB_OUTPUT"
+
       - name: Build and push image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/mnn-pipeline:latest
-            ghcr.io/${{ github.repository_owner }}/mnn-pipeline:${{ github.sha }}
+            ${{ steps.image_name.outputs.image_repo }}:latest
+            ${{ steps.image_name.outputs.image_repo }}:${{ github.sha }}
