@@ -20,6 +20,8 @@ class Config:
     # API Configuration
     MNN_API_HOST: str = os.getenv("MNN_API_HOST", "127.0.0.1")
     MNN_API_PORT: int = int(os.getenv("MNN_API_PORT", "8000"))
+    ENVIRONMENT: str = os.getenv("ENVIRONMENT", "production")
+    API_AUTH_ENABLED: bool = os.getenv("API_AUTH_ENABLED", "false").lower() == "true"
 
     # Security Configuration
     MAX_QUERY_LENGTH: int = int(os.getenv("MAX_QUERY_LENGTH", "1000"))
