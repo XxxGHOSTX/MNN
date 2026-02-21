@@ -68,10 +68,23 @@ jobs:
         run: |
           python -m pytest
 
+  cpp-compile:
+    name: C++ Compile Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Compile mnn_core.cpp
+        run: |
+          g++ -std=c++17 -Iinclude -c src/mnn_core.cpp -o /tmp/mnn_core.o
+          echo "C++ compile check passed."
+
   docker-smoke:
     name: Docker Smoke Test
     runs-on: ubuntu-latest
-    needs: [lint, test]
+    needs: [lint, test, cpp-compile]
     
     services:
       postgres:
@@ -171,7 +184,7 @@ jobs:
   deploy:
     name: Deploy Docker image
     runs-on: ubuntu-latest
-    needs: [lint, test, docker-smoke]
+    needs: [lint, test, cpp-compile, docker-smoke]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       contents: read

@@ -1,4 +1,4 @@
-.PHONY: help install lint test smoke build run compose-up compose-down clean fmt
+.PHONY: help install lint test smoke build run compose-up compose-down clean fmt agent cpp
 
 # Default target
 help:
@@ -7,6 +7,8 @@ help:
 	@echo "install        - Install Python dependencies (optionally in venv)"
 	@echo "lint           - Run linting (py_compile on all Python sources)"
 	@echo "test           - Run test suite with pytest"
+	@echo "agent          - Run the MNN automation agent (all checks)"
+	@echo "cpp            - Compile C++ core (g++ -std=c++17)"
 	@echo "smoke          - Run Docker smoke test (build, run, test, cleanup)"
 	@echo "build          - Build Docker image"
 	@echo "run            - Run Docker container (single instance)"
@@ -53,6 +55,17 @@ test:
 	@echo "Running test suite..."
 	@python -m pytest
 	@echo "Tests complete."
+
+# Run automation agent
+agent:
+	@echo "Running MNN automation agent..."
+	@python -m mnn.agent
+
+# Compile C++ core
+cpp:
+	@echo "Compiling C++ core..."
+	@g++ -std=c++17 -Iinclude -c src/mnn_core.cpp -o /tmp/mnn_core.o
+	@echo "C++ compile check passed."
 
 # Run Docker smoke test
 smoke:

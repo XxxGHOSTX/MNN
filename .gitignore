@@ -58,3 +58,5 @@ htmlcov/
 /tmp/
 mnn/__pycache__/
 mnn/tests/__pycache__/
+*.o
+*.out

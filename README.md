@@ -161,11 +161,20 @@ This demonstrates:
 pip install -r requirements.txt
 ```
 
+For an editable install with packaging metadata:
+
+```bash
+pip install -e ".[dev]"
+```
+
 ## Running Tests
 
 ```bash
-# Run all tests
+# Run all tests (310 tests expected)
 python -m unittest discover tests
+
+# Run with pytest
+python -m pytest
 
 # Run specific test module
 python -m unittest tests.test_thalos
@@ -174,6 +183,49 @@ python -m unittest tests.test_encryption
 python -m unittest tests.test_mind
 python -m unittest tests.test_buffer
 ```
+
+## C++ Core Compile Check
+
+```bash
+g++ -std=c++17 -Iinclude -c src/mnn_core.cpp -o /tmp/mnn_core.o
+# or via Make
+make cpp
+```
+
+## Automation Agent
+
+The MNN automation agent discovers, validates, and reports on the health of the repository.
+
+```bash
+# Run all checks (discovery, deps, envvars, lint, test, cpp, imports)
+python -m mnn.agent
+
+# Run specific checks only
+python -m mnn.agent --checks discovery,deps,lint
+
+# Fail fast on first error
+python -m mnn.agent --fail-fast
+
+# Write log to custom path
+python -m mnn.agent --log /tmp/my_run.log
+
+# Via Make
+make agent
+```
+
+The agent writes a full JSON run log to `agent_run.log` by default.
+
+**Available checks:**
+
+| Check       | Description                                                  |
+|-------------|--------------------------------------------------------------|
+| `discovery` | Verify expected directories and files are present            |
+| `deps`      | Verify all required Python packages are importable           |
+| `envvars`   | Validate environment variable assumptions                    |
+| `lint`      | Compile-check all `.py` files with `py_compile`              |
+| `test`      | Run `python -m unittest discover tests`                      |
+| `cpp`       | Compile `src/mnn_core.cpp` with `g++ -std=c++17`             |
+| `imports`   | Spot-check critical cross-module imports                     |
 
 ## Architecture
 
