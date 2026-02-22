@@ -20,7 +20,7 @@ class StructuredFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         """Format log record as JSON."""
         log_data: Dict[str, Any] = {
-            'timestamp': datetime.now(timezone.utc).isoformat(),
+            'timestamp': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
             'level': record.levelname,
             'logger': record.name,
             'message': record.getMessage(),
@@ -54,7 +54,7 @@ class TextFormatter(logging.Formatter):
         request_part = f"[{request_id}] " if request_id else ""
 
         return (
-            f"{datetime.now(timezone.utc).isoformat()} "
+            f"{datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%fZ')} "
             f"{record.levelname:8s} "
             f"{request_part}"
             f"{record.name}:{record.funcName}:{record.lineno} - "

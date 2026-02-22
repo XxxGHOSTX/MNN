@@ -1,5 +1,6 @@
 services:
   # PostgreSQL database for ThalosBridge
+  # NOTE: Override POSTGRES_PASSWORD via .env file for production use
   db:
     image: postgres:16
     environment:
