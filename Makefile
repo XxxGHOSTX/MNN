@@ -1,19 +1,33 @@
-.PHONY: help install lint test smoke build run compose-up compose-down clean fmt
+.PHONY: help setup install lint test verify smoke build run run-docker compose-up compose-down clean fmt
 
 # Default target
 help:
 	@echo "MNN Pipeline - Makefile Targets"
 	@echo "================================"
+	@echo "setup          - Provision the environment (install dependencies)"
 	@echo "install        - Install Python dependencies (optionally in venv)"
 	@echo "lint           - Run linting (py_compile on all Python sources)"
 	@echo "test           - Run test suite with pytest"
+	@echo "verify         - Full verification: lint + test + C++ sanity compile"
 	@echo "smoke          - Run Docker smoke test (build, run, test, cleanup)"
 	@echo "build          - Build Docker image"
-	@echo "run            - Run Docker container (single instance)"
+	@echo "run            - Start the API server locally (Ctrl+C to stop)"
+	@echo "run-docker     - Run API server in Docker container"
 	@echo "compose-up     - Start services with docker compose"
 	@echo "compose-down   - Stop services with docker compose"
 	@echo "clean          - Clean build artifacts and caches"
 	@echo "fmt            - Format code (stub - no formatter configured)"
+
+# Provision the environment (deterministic setup from a clean clone)
+setup: install
+	@if [ ! -f .env ]; then \
+		echo "Creating .env from .env.example..."; \
+		cp .env.example .env; \
+		echo ".env created. Review and edit before use."; \
+	else \
+		echo ".env already exists, skipping copy."; \
+	fi
+	@echo "Setup complete. Run 'make verify' to validate, 'make run' to start."
 
 # Install dependencies
 install:
@@ -47,6 +61,16 @@ lint:
 	@find tests -name "*.py" -exec python -m py_compile {} +
 	@find tools -name "*.py" -exec python -m py_compile {} +
 	@echo "Linting complete - no syntax errors found."
+
+# Full verification: lint + test + C++ sanity compile
+verify: lint test
+	@echo "Running C++ core sanity compile..."
+	@g++ -std=c++17 -Iinclude -c src/mnn_core.cpp -o /tmp/mnn_core_sanity.o
+	@rm -f /tmp/mnn_core_sanity.o
+	@echo "C++ sanity compile passed."
+	@echo "Running verification agent..."
+	@python -m tools.verify
+	@echo "Verification complete."
 
 # Run tests
 test:
@@ -94,8 +118,15 @@ build:
 	docker build -t mnn:local .
 	@echo "Docker build complete."
 
-# Run Docker container
+# Start the API server locally (runs until Ctrl+C)
 run:
+	@echo "Starting MNN API server locally..."
+	@echo "API available at http://localhost:8000"
+	@echo "Press Ctrl+C to stop"
+	@python -m uvicorn api:app --host 127.0.0.1 --port 8000
+
+# Run Docker container
+run-docker:
 	@echo "Running Docker container..."
 	@echo "Container will be available at http://localhost:8000"
 	@echo "Press Ctrl+C to stop"

@@ -56,5 +56,8 @@ htmlcov/
 *.log
 *.tmp
 /tmp/
-mnn/__pycache__/
-mnn/tests/__pycache__/
+# Generated artifacts
+verification_report.json
+query_history.log
+.env
+

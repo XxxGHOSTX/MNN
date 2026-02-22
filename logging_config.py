@@ -6,7 +6,7 @@ Provides structured logging with request IDs and consistent formatting.
 import logging
 import sys
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict
 from contextvars import ContextVar
 
@@ -20,7 +20,7 @@ class StructuredFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         """Format log record as JSON."""
         log_data: Dict[str, Any] = {
-            'timestamp': datetime.utcnow().isoformat() + 'Z',
+            'timestamp': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%f') + 'Z',
             'level': record.levelname,
             'logger': record.name,
             'message': record.getMessage(),
@@ -54,7 +54,7 @@ class TextFormatter(logging.Formatter):
         request_part = f"[{request_id}] " if request_id else ""
 
         return (
-            f"{datetime.utcnow().isoformat()}Z "
+            f"{datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%f')}Z "
             f"{record.levelname:8s} "
             f"{request_part}"
             f"{record.name}:{record.funcName}:{record.lineno} - "
