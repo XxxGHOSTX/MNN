@@ -58,3 +58,7 @@ htmlcov/
 /tmp/
 mnn/__pycache__/
 mnn/tests/__pycache__/
+
+# Runtime data (generated at runtime, not version-controlled)
+feedback_data.json
+query_history.log

@@ -39,9 +39,11 @@ COPY config.py .
 COPY logging_config.py .
 COPY security.py .
 COPY metrics.py .
+COPY feedback.py .
 
-# Copy mnn_pipeline directory
+# Copy pipeline and core packages
 COPY mnn_pipeline/ ./mnn_pipeline/
+COPY mnn/ ./mnn/
 
 # Expose FastAPI port
 EXPOSE 8000
