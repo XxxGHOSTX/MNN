@@ -62,3 +62,18 @@ help me complete this repo, making it fully operational and deployable
 2. Deploy backend container and point `VITE_BACKEND_URL` to hosted API
 3. Enable API auth for query endpoint in production (`API_AUTH_ENABLED=true`)
 4. Run full CI in GitHub with supply-chain artifacts and CodeQL enabled
+
+## Milestone Program (User-selected 1c)
+- Milestone A (current): Hermetic build foundation, deterministic baseline checks, CI build-hermetic gate
+- Milestone B (next): Cross-language RNG propagation and deterministic coordinate mapping baseline
+- Milestone C: Formal lifecycle verification with Z3/pySMT in CI
+- Milestone D: mmap corpus + replay/audit hash-chain execution
+- Milestone E: Benchmarks, release hardening, and signed reproducible artifacts
+
+## Milestone A Implemented
+- Added `devops/nix/flake.nix` (Python 3.12 + C++ toolchain deterministic shell)
+- Added `devops/docker/Dockerfile.hermetic` and `devops/locks/python-3.12-requirements.lock.txt`
+- Added host variance + reproducible image scripts (`scripts/verify_host_variance.py`, `scripts/verify_docker_reproducibility.sh`)
+- Added deterministic artifact generators (`tools/generate_architecture_artifacts.py`, `tools/reproducibility_check.py`)
+- Added generated deterministic docs in `docs/deterministic/` (dependency graph, lifecycle model, reproducibility checks)
+- Added CI `build-hermetic` job with Nix flake check + deterministic Docker rebuild verification + smoke checks
