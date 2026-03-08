@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 from fastapi.testclient import TestClient
 
@@ -95,7 +96,8 @@ def test_deterministic_replay_validates_hash_chained_logs(tmp_path):
 
     output_hash = sha256_hex(generate_basile_volume(coordinate=11, seed=2, query="abc", volume_length=256))
 
-    log_path = tmp_path / "deterministic_replay.jsonl"
+    log_path = Path("/app/logs/deterministic/test_runtime_review_replay.jsonl")
+    log_path.parent.mkdir(parents=True, exist_ok=True)
     entries = [
         {
             "event_id": "init",
@@ -140,6 +142,19 @@ def test_deterministic_replay_validates_hash_chained_logs(tmp_path):
     assert replay_data["ok"] is True
     assert replay_data["errors"] == []
     assert isinstance(replay_data["final_hash"], str)
+
+
+def test_deterministic_replay_rejects_external_paths(tmp_path):
+    client = TestClient(app)
+    token = _login(client)
+    outside = tmp_path / "outside_replay.jsonl"
+    outside.write_text("{}\n", encoding="utf-8")
+    replay = client.post(
+        "/deterministic/replay",
+        json={"log_path": str(outside)},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert replay.status_code == 400
 
 
 def test_existing_auth_dashboard_flow_still_functional():

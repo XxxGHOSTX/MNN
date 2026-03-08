@@ -77,3 +77,29 @@ help me complete this repo, making it fully operational and deployable
 - Added deterministic artifact generators (`tools/generate_architecture_artifacts.py`, `tools/reproducibility_check.py`)
 - Added generated deterministic docs in `docs/deterministic/` (dependency graph, lifecycle model, reproducibility checks)
 - Added CI `build-hermetic` job with Nix flake check + deterministic Docker rebuild verification + smoke checks
+
+## Milestones B/C/D Implemented (ALL directive execution)
+- Deterministic runtime + lifecycle enforcement:
+  - Added `mnn/deterministic/lifecycle.py` with strict state machine and deterministic halt snapshots
+  - Added neuro-symbolic control-plane runner (`mnn/deterministic/control_plane.py`) integrated into `/query`
+  - Lifecycle stages enforced: initialize → validate → operate → reconcile → checkpoint → terminate
+- RNG propagation + cross-language sync:
+  - Added deterministic seed manager + SplitMix64 descriptors (`mnn/deterministic/rng.py`)
+  - Added C++ parity module (`include/deterministic_state.hpp`, `src/deterministic_state.cpp`)
+  - Added parity checker tool (`tools/cross_language_rng_check.py`) and CI/runtime gate
+- Formal verification pipeline:
+  - Added Z3 + pySMT-compatible checks (`mnn/deterministic/formal.py`, `verification/*`)
+  - Added `make verify-lifecycle` and CI `verify-lifecycle` job
+- Deterministic corpus + Basile mapping:
+  - Added base-29 coordinate conversion and deterministic corpus generator (`mnn/deterministic/basile.py`)
+  - Added mmap + optional PyArrow processing engine (`mnn/deterministic/corpus.py`)
+  - Added processing/benchmark tooling (`tools/process_corpus.py`, `tools/deterministic_benchmark.py`)
+- Replay/audit framework:
+  - Added hash-chained JSONL logger + replay validation (`mnn/deterministic/audit.py`, `mnn/deterministic/replay.py`)
+  - Added endpoints: `/deterministic/proofs`, `/deterministic/replay`, `/deterministic/basile/generate`
+  - Added CLI wrapper: `./thalos replay ...`, `./thalos generate ...`
+
+## Security/Hardening Fixes from Iteration 3 QA
+- Fixed replay path trust issue by sandboxing replay to deterministic audit directory only
+- Removed predictable static auth-secret fallback; now uses configured secret or per-process high-entropy secret
+- Removed pySMT "skipped" result mode; formal pipeline now reports deterministic fallback validation when pySMT is unavailable

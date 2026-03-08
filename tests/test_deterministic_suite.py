@@ -7,7 +7,7 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
-from api import app
+from api import app, _get_auth_secret
 from mnn.deterministic.audit import HashChainAuditLogger, replay_and_validate_log
 from mnn.deterministic.basile import coordinate_to_base29, generate_basile_volume
 from mnn.deterministic.corpus import DeterministicCorpusEngine
@@ -15,6 +15,14 @@ from mnn.deterministic.formal import prove_lifecycle_invariants
 from mnn.deterministic.lifecycle import LifecycleController, LifecycleState
 from mnn.deterministic.rng import splitmix64_words
 from mnn.deterministic.utils import sha256_hex
+
+
+def _login(client: TestClient) -> str:
+    response = client.post("/auth/login", json={"username": "admin", "password": "admin123!"})
+    assert response.status_code == 200
+    token = response.json().get("access_token")
+    assert isinstance(token, str)
+    return token
 
 
 def test_lifecycle_state_order_enforced(tmp_path: Path):
@@ -74,6 +82,10 @@ def test_rng_splitmix_words_stable():
     assert len(words_a) == 6
 
 
+def test_auth_secret_is_not_static_default():
+    assert _get_auth_secret() != "mnn-dev-secret-change-me"
+
+
 def test_corpus_engine_mmap_index(tmp_path: Path):
     corpus_path = tmp_path / "sample.txt"
     corpus_path.write_text("abcde abcde abcde xyzxy", encoding="ascii")
@@ -104,7 +116,8 @@ def test_api_deterministic_endpoints(tmp_path: Path):
     assert generated.status_code == 200
     output_hash = generated.json()["output_hash"]
 
-    log_path = tmp_path / "replay.jsonl"
+    log_path = Path("/app/logs/deterministic/test_replay_endpoint.jsonl")
+    log_path.parent.mkdir(parents=True, exist_ok=True)
     entries = [
         {
             "event_id": "init",
@@ -146,3 +159,16 @@ def test_api_deterministic_endpoints(tmp_path: Path):
     )
     assert replay.status_code == 200
     assert replay.json()["ok"] is True
+
+
+def test_api_replay_rejects_outside_paths(tmp_path: Path):
+    client = TestClient(app)
+    token = _login(client)
+    forbidden = tmp_path / "outside.jsonl"
+    forbidden.write_text("{}\n", encoding="utf-8")
+    response = client.post(
+        "/deterministic/replay",
+        json={"log_path": str(forbidden)},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 400

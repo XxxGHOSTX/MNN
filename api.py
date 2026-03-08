@@ -9,6 +9,7 @@ queries and receive deterministic, ranked results.
 import hmac
 import os
 from pathlib import Path
+import secrets
 from functools import lru_cache
 from typing import List, Dict, Any, Optional
 
@@ -257,7 +258,21 @@ def cached_pipeline(query: str) -> List[Dict[str, Any]]:
 
 def _get_auth_secret() -> str:
     """Return configured auth secret with safe local fallback."""
-    return config.MNN_AUTH_SECRET or "mnn-dev-secret-change-me"
+    if not hasattr(app.state, "ephemeral_auth_secret"):
+        app.state.ephemeral_auth_secret = secrets.token_hex(32)
+    return config.MNN_AUTH_SECRET or app.state.ephemeral_auth_secret
+
+
+def _resolve_replay_log_path(log_path: str) -> Path:
+    """Resolve and constrain replay paths to deterministic audit directory."""
+    requested = Path(log_path).expanduser().resolve()
+    allowed_root = Path(config.DETERMINISTIC_AUDIT_LOG_PATH).expanduser().resolve().parent
+    if requested == allowed_root or allowed_root in requested.parents:
+        return requested
+    raise HTTPException(
+        status_code=400,
+        detail=f"Replay log path must be within {allowed_root}",
+    )
 
 
 def _authenticate_user(username: str, password: str) -> bool:
@@ -620,12 +635,13 @@ def deterministic_proofs(current_user: Dict[str, Any] = Depends(get_current_user
 @app.post("/deterministic/replay", response_model=ReplayResponse, tags=["deterministic"])
 def deterministic_replay(request: ReplayRequest, current_user: Dict[str, Any] = Depends(get_current_user)):
     """Verify hash-chained audit log and optional final digest assertion."""
-    result = replay_log(request.log_path, assert_hash=request.assert_hash)
+    safe_log_path = _resolve_replay_log_path(request.log_path)
+    result = replay_log(safe_log_path, assert_hash=request.assert_hash)
     logger.info(
         "Replay validation executed",
         extra={
             "user": current_user["username"],
-            "log_path": request.log_path,
+            "log_path": str(safe_log_path),
             "ok": result.ok,
             "final_hash": result.final_hash,
         },
