@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   Activity,
@@ -10,7 +10,7 @@ import {
   Timer,
   Wifi,
 } from "lucide-react";
-import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, Tooltip, XAxis, YAxis } from "recharts";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
@@ -37,6 +37,8 @@ export default function DashboardPage({ user, onLogout }) {
   const [query, setQuery] = useState("deterministic inference");
   const [queryResponse, setQueryResponse] = useState(null);
   const [runningQuery, setRunningQuery] = useState(false);
+  const chartContainerRef = useRef(null);
+  const [chartSize, setChartSize] = useState({ width: 640, height: 240 });
 
   const refreshOverview = async () => {
     try {
@@ -52,6 +54,22 @@ export default function DashboardPage({ user, onLogout }) {
 
   useEffect(() => {
     refreshOverview();
+  }, []);
+
+  useEffect(() => {
+    const verifyChartSize = () => {
+      const rect = chartContainerRef.current?.getBoundingClientRect();
+      if (rect && rect.width > 0 && rect.height > 0) {
+        setChartSize({ width: Math.floor(rect.width), height: Math.floor(rect.height) });
+      }
+    };
+
+    const frame = requestAnimationFrame(verifyChartSize);
+    window.addEventListener("resize", verifyChartSize);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("resize", verifyChartSize);
+    };
   }, []);
 
   const runOperatorQuery = async () => {
@@ -197,15 +215,13 @@ export default function DashboardPage({ user, onLogout }) {
               Feedback Distribution
             </h2>
           </div>
-          <div className="mt-4 h-64" data-testid="feedback-stats-chart">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData}>
-                <XAxis dataKey="rating" stroke="#A1A1AA" />
-                <YAxis stroke="#A1A1AA" allowDecimals={false} />
-                <Tooltip />
-                <Bar dataKey="count" fill="#007AFF" radius={[2, 2, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+          <div ref={chartContainerRef} className="mt-4 h-64" data-testid="feedback-stats-chart">
+            <BarChart width={chartSize.width} height={chartSize.height} data={chartData}>
+              <XAxis dataKey="rating" stroke="#A1A1AA" />
+              <YAxis stroke="#A1A1AA" allowDecimals={false} />
+              <Tooltip />
+              <Bar dataKey="count" fill="#007AFF" radius={[2, 2, 0, 0]} />
+            </BarChart>
           </div>
         </Card>
 

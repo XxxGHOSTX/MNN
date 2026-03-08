@@ -16,6 +16,8 @@ help me complete this repo, making it fully operational and deployable
 - Added React + Vite frontend (separate deploy unit) optimized for Vercel static hosting
 - Preserved existing pipeline/query APIs and test behavior
 - Added optional infra checks (Postgres/Redis/MinIO/Keycloak) with graceful mock fallback
+- Added supervisor-compatible backend entrypoint at `/app/backend/server.py` and frontend `start` script
+- Enforced env/user-configured backend URL strategy in frontend (no hardcoded localhost fallback)
 
 ## Implemented
 - Backend:
@@ -37,6 +39,7 @@ help me complete this repo, making it fully operational and deployable
 - Quality:
   - Added auth/dashboard tests (`tests/test_auth_dashboard.py`)
   - Existing test suite remains passing
+  - Recharts sizing warning resolved by explicit chart sizing based on container dimensions
 
 ## Prioritized Backlog
 ### P0

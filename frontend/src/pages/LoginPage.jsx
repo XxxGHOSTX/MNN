@@ -10,15 +10,20 @@ const AUTH_BACKGROUND =
   "https://images.unsplash.com/photo-1698668975271-2ba9a323be6b?crop=entropy&cs=srgb&fm=jpg&q=85";
 
 export default function LoginPage({ onLogin }) {
+  const initialBackend = getBackendUrl();
   const [username, setUsername] = useState("admin");
   const [password, setPassword] = useState("admin123!");
-  const [backendUrl, setBackendUrlState] = useState(getBackendUrl());
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [backendUrl, setBackendUrlState] = useState(initialBackend);
+  const [showAdvanced, setShowAdvanced] = useState(!initialBackend);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     try {
+      if (!backendUrl.trim()) {
+        toast.error("Please provide a backend URL.");
+        return;
+      }
       setIsSubmitting(true);
       setBackendUrl(backendUrl);
       await onLogin(username, password);

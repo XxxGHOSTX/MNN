@@ -6,7 +6,7 @@ const stripTrailingSlash = (value) => value.replace(/\/+$/, "");
 export const getBackendUrl = () => {
   const envValue = import.meta.env.VITE_BACKEND_URL || "";
   const savedValue = localStorage.getItem(BACKEND_URL_KEY) || envValue;
-  return stripTrailingSlash(savedValue || "http://127.0.0.1:8000");
+  return stripTrailingSlash(savedValue || "");
 };
 
 export const setBackendUrl = (url) => {
@@ -24,6 +24,11 @@ export const clearSession = () => {
 };
 
 const request = async (path, options = {}) => {
+  const backendUrl = getBackendUrl();
+  if (!backendUrl) {
+    throw new Error("Backend URL is not configured. Set it in login advanced settings or VITE_BACKEND_URL.");
+  }
+
   const token = getAccessToken();
   const headers = {
     "Content-Type": "application/json",
@@ -34,7 +39,7 @@ const request = async (path, options = {}) => {
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${getBackendUrl()}${path}`, {
+  const response = await fetch(`${backendUrl}${path}`, {
     method: options.method || "GET",
     headers,
     body: options.body,
