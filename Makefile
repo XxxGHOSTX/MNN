@@ -47,7 +47,7 @@ install:
 # Lint Python sources
 lint:
 	@echo "Linting Python sources..."
-	@python -m compileall .
+	@python -m compileall . -x '^\./frontend/'
 	@python -m py_compile api.py
 	@python -m py_compile main.py
 	@python -m py_compile middleware.py

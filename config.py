@@ -22,6 +22,18 @@ class Config:
     MNN_API_PORT: int = int(os.getenv("MNN_API_PORT", "8000"))
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "production")
     API_AUTH_ENABLED: bool = os.getenv("API_AUTH_ENABLED", "false").lower() == "true"
+    MNN_AUTH_SECRET: str = os.getenv("MNN_AUTH_SECRET", "")
+    MNN_ADMIN_USERNAME: str = os.getenv("MNN_ADMIN_USERNAME", "admin")
+    MNN_ADMIN_PASSWORD: str = os.getenv("MNN_ADMIN_PASSWORD", "admin123!")
+    MNN_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("MNN_TOKEN_EXPIRE_MINUTES", "120"))
+
+    # Optional Infrastructure Integrations
+    REDIS_URL: str = os.getenv("REDIS_URL", "")
+    MINIO_ENDPOINT: str = os.getenv("MINIO_ENDPOINT", "")
+    MINIO_ACCESS_KEY: str = os.getenv("MINIO_ACCESS_KEY", "")
+    MINIO_SECRET_KEY: str = os.getenv("MINIO_SECRET_KEY", "")
+    KEYCLOAK_URL: str = os.getenv("KEYCLOAK_URL", "")
+    KEYCLOAK_REALM: str = os.getenv("KEYCLOAK_REALM", "master")
 
     # Security Configuration
     MAX_QUERY_LENGTH: int = int(os.getenv("MAX_QUERY_LENGTH", "1000"))
@@ -50,6 +62,12 @@ class Config:
         # Timeout validation
         if not isinstance(cls.THALOS_DB_CONNECT_TIMEOUT, int) or cls.THALOS_DB_CONNECT_TIMEOUT < 1:
             raise ValueError(f"Invalid THALOS_DB_CONNECT_TIMEOUT: {cls.THALOS_DB_CONNECT_TIMEOUT} (must be positive integer)")
+
+        # Token expiry validation
+        if not isinstance(cls.MNN_TOKEN_EXPIRE_MINUTES, int) or cls.MNN_TOKEN_EXPIRE_MINUTES < 1:
+            raise ValueError(
+                f"Invalid MNN_TOKEN_EXPIRE_MINUTES: {cls.MNN_TOKEN_EXPIRE_MINUTES} (must be positive integer)"
+            )
 
 
 # Singleton config instance

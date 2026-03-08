@@ -6,17 +6,21 @@ Provides a /query endpoint for external systems (like Thalos Prime) to submit
 queries and receive deterministic, ranked results.
 """
 
+import hmac
 import os
 from functools import lru_cache
 from typing import List, Dict, Any, Optional
 
-from fastapi import FastAPI, HTTPException, Request, Query
+from fastapi import FastAPI, HTTPException, Request, Query, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, Field
 
 from main import _execute_pipeline
 from mnn_pipeline import normalize_query
 from config import config
+from auth_utils import create_access_token, verify_access_token
+from infra_status import get_infra_status
 from logging_config import setup_logging, get_logger, set_request_id
 from security import (
     RateLimiter,
@@ -47,8 +51,18 @@ app = FastAPI(
             "name": "monitoring",
             "description": "Health check and monitoring endpoints",
         },
+        {
+            "name": "auth",
+            "description": "Authentication and session management",
+        },
+        {
+            "name": "dashboard",
+            "description": "Operational dashboard endpoints",
+        },
     ],
 )
+
+http_bearer = HTTPBearer(auto_error=False)
 
 # Add CORS middleware (configure allowed origins as needed)
 app.add_middleware(
@@ -115,6 +129,28 @@ class QueryResponse(BaseModel):
     count: int = Field(..., description="Number of results returned")
 
 
+class LoginRequest(BaseModel):
+    """Authentication request model."""
+
+    username: str = Field(..., min_length=1, max_length=128)
+    password: str = Field(..., min_length=1, max_length=256)
+
+
+class TokenResponse(BaseModel):
+    """Authentication token response model."""
+
+    access_token: str
+    token_type: str = "bearer"
+    expires_in: int
+
+
+class UserProfileResponse(BaseModel):
+    """Authenticated user profile response model."""
+
+    username: str
+    auth_enabled_for_query_endpoint: bool
+
+
 class FeedbackRequest(BaseModel):
     """
     Request model for feedback endpoint.
@@ -179,6 +215,75 @@ def cached_pipeline(query: str) -> List[Dict[str, Any]]:
     return copy.deepcopy(_cached_execute_api_pipeline(query))
 
 
+def _get_auth_secret() -> str:
+    """Return configured auth secret with safe local fallback."""
+    return config.MNN_AUTH_SECRET or "mnn-dev-secret-change-me"
+
+
+def _authenticate_user(username: str, password: str) -> bool:
+    """Validate credentials against configured admin account."""
+    return hmac.compare_digest(username, config.MNN_ADMIN_USERNAME) and hmac.compare_digest(
+        password,
+        config.MNN_ADMIN_PASSWORD,
+    )
+
+
+def _validate_bearer_token(credentials: Optional[HTTPAuthorizationCredentials]) -> Dict[str, Any]:
+    """Validate bearer token and return decoded payload."""
+    if credentials is None or credentials.scheme.lower() != "bearer":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing bearer token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    payload = verify_access_token(credentials.credentials, _get_auth_secret())
+    if payload is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    return payload
+
+
+def get_current_user(credentials: Optional[HTTPAuthorizationCredentials] = Depends(http_bearer)) -> Dict[str, Any]:
+    """Dependency returning current authenticated user."""
+    payload = _validate_bearer_token(credentials)
+    return {"username": payload.get("sub", "unknown")}
+
+
+@app.post("/auth/login", response_model=TokenResponse, tags=["auth"])
+def login(request: LoginRequest):
+    """Authenticate operator and issue bearer token."""
+    if not _authenticate_user(request.username, request.password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    token = create_access_token(
+        username=request.username,
+        secret=_get_auth_secret(),
+        expires_minutes=config.MNN_TOKEN_EXPIRE_MINUTES,
+    )
+    return TokenResponse(
+        access_token=token,
+        expires_in=config.MNN_TOKEN_EXPIRE_MINUTES * 60,
+    )
+
+
+@app.get("/auth/me", response_model=UserProfileResponse, tags=["auth"])
+def get_profile(current_user: Dict[str, Any] = Depends(get_current_user)):
+    """Return profile information for currently authenticated operator."""
+    return UserProfileResponse(
+        username=current_user["username"],
+        auth_enabled_for_query_endpoint=config.API_AUTH_ENABLED,
+    )
+
+
 @app.get("/")
 def root():
     """
@@ -194,6 +299,8 @@ def root():
         "endpoints": {
             "/query": "POST endpoint for submitting queries",
             "/docs": "Interactive API documentation",
+            "/auth/login": "POST operator login",
+            "/dashboard/overview": "GET authenticated dashboard data",
         },
         "example": {
             "curl": 'curl -X POST "http://localhost:8000/query" -H "Content-Type: application/json" -d \'{"query":"artificial intelligence"}\'',
@@ -249,6 +356,17 @@ def query_endpoint(request: QueryRequest, http_request: Request):
     
     client_host = http_request.client.host if http_request.client else "unknown"
     logger.info(f"Received query from {client_host}: {request.query[:100]}")
+
+    if config.API_AUTH_ENABLED:
+        auth_header = http_request.headers.get("Authorization", "")
+        token = auth_header.replace("Bearer ", "", 1) if auth_header.startswith("Bearer ") else ""
+        if not token or verify_access_token(token, _get_auth_secret()) is None:
+            metrics.increment_counter('mnn_queries_error_total', labels={'error_type': 'auth_required'})
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Authentication required for query endpoint",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
     
     # Increment total queries
     metrics.increment_counter('mnn_queries_total')
@@ -374,6 +492,60 @@ def health_check():
     return health_status
 
 
+@app.get("/dashboard/overview", tags=["dashboard"])
+def dashboard_overview(current_user: Dict[str, Any] = Depends(get_current_user)):
+    """Provide authenticated dashboard data with graceful infra fallbacks."""
+    from datetime import datetime
+    from feedback import get_feedback_store
+    from metrics import get_metrics_collector
+
+    metrics_data = get_metrics_collector().get_metrics()
+    counters = metrics_data.get("counters", {})
+    histograms = metrics_data.get("histograms", {})
+    query_duration = histograms.get("mnn_query_duration_seconds{status=\"success\"}", {})
+
+    total_queries = sum(
+        value for key, value in counters.items() if key.startswith("mnn_queries_total")
+    )
+    total_errors = sum(
+        value for key, value in counters.items() if key.startswith("mnn_queries_error_total")
+    )
+    total_success = sum(
+        value for key, value in counters.items() if key.startswith("mnn_queries_success_total")
+    )
+
+    infra = get_infra_status(config)
+    feedback_stats = get_feedback_store().get_statistics()
+
+    return {
+        "timestamp": datetime.now().isoformat(),
+        "user": current_user["username"],
+        "health": health_check(),
+        "metrics": {
+            "total_queries": total_queries,
+            "total_success": total_success,
+            "total_errors": total_errors,
+            "avg_latency_seconds": round(query_duration.get("avg", 0), 4),
+            "cache": {
+                "hits": _cached_execute_api_pipeline.cache_info().hits,
+                "misses": _cached_execute_api_pipeline.cache_info().misses,
+                "size": _cached_execute_api_pipeline.cache_info().currsize,
+            },
+        },
+        "infra": infra,
+        "feedback": feedback_stats,
+    }
+
+
+@app.get("/infra/status", tags=["dashboard"])
+def infra_status(current_user: Dict[str, Any] = Depends(get_current_user)):
+    """Expose infrastructure status as a dedicated endpoint."""
+    return {
+        "user": current_user["username"],
+        "services": get_infra_status(config),
+    }
+
+
 @app.get("/metrics", tags=["monitoring"])
 def metrics_endpoint():
     """
@@ -437,7 +609,11 @@ def version_info():
         "features": {
             "rate_limiting": config.RATE_LIMIT_ENABLED,
             "authentication": config.API_AUTH_ENABLED,
+            "operator_auth": True,
             "database": bool(config.THALOS_DB_DSN),
+            "redis": bool(config.REDIS_URL),
+            "minio": bool(config.MINIO_ENDPOINT),
+            "keycloak": bool(config.KEYCLOAK_URL),
             "query_classification": True,
             "synonym_expansion": True,
             "user_feedback": True,
@@ -625,7 +801,7 @@ if __name__ == "__main__":
     config.validate()
 
     # Log startup configuration
-    logger.info(f"Starting MNN Knowledge Engine API")
+    logger.info("Starting MNN Knowledge Engine API")
     logger.info(f"Host: {config.MNN_API_HOST}, Port: {config.MNN_API_PORT}")
     logger.info(f"Max query length: {config.MAX_QUERY_LENGTH}")
     logger.info(f"Rate limiting: {'enabled' if config.RATE_LIMIT_ENABLED else 'disabled'}")

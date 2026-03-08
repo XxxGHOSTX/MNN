@@ -19,6 +19,47 @@ python tools/find_coherent_page.py "hello world" --seed 42
 
 See [BABEL_SIPHON_README.md](BABEL_SIPHON_README.md) for complete documentation.
 
+## Operator Web App (Auth + Dashboard)
+
+This repository now includes a deployable React/Vite operator dashboard under `frontend/` with:
+
+- Operator login (`/auth/login`)
+- Authenticated profile (`/auth/me`)
+- Main dashboard flow (`/dashboard/overview`)
+- Query runner (`/query`)
+- Infrastructure panel with graceful fallback mode (`postgres`, `redis`, `minio`, `keycloak`)
+
+### Run backend + frontend locally
+
+```bash
+# Backend
+pip install -r requirements.txt
+uvicorn api:app --host 0.0.0.0 --port 8000
+
+# Frontend (separate terminal)
+cd frontend
+yarn install
+yarn dev
+```
+
+Default operator credentials:
+
+- Username: `admin`
+- Password: `admin123!`
+
+Override via environment variables:
+
+- `MNN_AUTH_SECRET`
+- `MNN_ADMIN_USERNAME`
+- `MNN_ADMIN_PASSWORD`
+- `MNN_TOKEN_EXPIRE_MINUTES`
+
+### Vercel + backend host deployment
+
+- Deploy `frontend/` to Vercel (uses `frontend/vercel.json`)
+- Deploy backend container separately (Dockerfile at repo root)
+- Set `VITE_BACKEND_URL` in frontend environment to your hosted backend URL
+
 ## Overview
 
 THALOS (The Heuristic Algorithm for Lattice-Optimized Synthesis) implements a unique 3-stage mathematical refinement process that transforms infinite permutation space into structured, linguistically-valid neural network training data.
@@ -710,8 +751,11 @@ docker compose up -d api
 This starts:
 - **api**: MNN Pipeline FastAPI service on port 8000
 - **db**: PostgreSQL 16 database on port 5432 (optional)
+- **redis**: Redis cache on port 6379 (optional, auto-wired)
+- **minio**: Object storage API on port 9000 and console on 9001 (optional, auto-wired)
+- **keycloak**: Identity provider on port 8080 (optional, auto-wired)
 
-The API can run independently without the database. Database connection is optional and configured via `THALOS_DB_DSN` environment variable.
+The API can run independently with mock fallback if these services are absent. If env variables are configured, live health checks are used automatically.
 
 #### Stopping Services
 
