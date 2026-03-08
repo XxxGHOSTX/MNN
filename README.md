@@ -19,6 +19,22 @@ python tools/find_coherent_page.py "hello world" --seed 42
 
 See [BABEL_SIPHON_README.md](BABEL_SIPHON_README.md) for complete documentation.
 
+## Hermetic Build Foundation (Milestone A)
+
+Deterministic environment assets are now available under `devops/`:
+
+- `devops/nix/flake.nix` for hermetic Python 3.12 + C++ toolchain setup
+- `devops/docker/Dockerfile.hermetic` for reproducible container builds
+- `devops/locks/python-3.12-requirements.lock.txt` for pinned Python runtime dependencies
+- `scripts/verify_host_variance.py` and `scripts/verify_docker_reproducibility.sh` for reproducibility validation
+
+Determinism checks:
+
+```bash
+python tools/reproducibility_check.py --query "deterministic systems"
+python tools/generate_architecture_artifacts.py
+```
+
 ## Operator Web App (Auth + Dashboard)
 
 This repository now includes a deployable React/Vite operator dashboard under `frontend/` with:

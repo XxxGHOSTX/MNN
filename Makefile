@@ -1,4 +1,6 @@
-.PHONY: help setup install lint test verify smoke build run run-docker compose-up compose-down clean fmt
+.PHONY: help setup install lint test verify smoke build run run-docker compose-up compose-down clean fmt cpp-deterministic reproducibility-check
+
+DETERMINISTIC_CXXFLAGS=-std=c++17 -O2 -fno-fast-math -ffp-contract=off -fno-common
 
 # Default target
 help:
@@ -15,6 +17,8 @@ help:
 	@echo "run-docker     - Run API server in Docker container"
 	@echo "compose-up     - Start services with docker compose"
 	@echo "compose-down   - Stop services with docker compose"
+	@echo "cpp-deterministic - Compile C++ core with deterministic flags"
+	@echo "reproducibility-check - Run deterministic output and architecture artifact checks"
 	@echo "clean          - Clean build artifacts and caches"
 	@echo "fmt            - Format code (stub - no formatter configured)"
 
@@ -65,12 +69,25 @@ lint:
 # Full verification: lint + test + C++ sanity compile
 verify: lint test
 	@echo "Running C++ core sanity compile..."
-	@g++ -std=c++17 -Iinclude -c src/mnn_core.cpp -o /tmp/mnn_core_sanity.o
+	@g++ $(DETERMINISTIC_CXXFLAGS) -Iinclude -c src/mnn_core.cpp -o /tmp/mnn_core_sanity.o
 	@rm -f /tmp/mnn_core_sanity.o
 	@echo "C++ sanity compile passed."
 	@echo "Running verification agent..."
 	@python -m tools.verify
 	@echo "Verification complete."
+
+cpp-deterministic:
+	@echo "Compiling C++ core with deterministic flags..."
+	@g++ $(DETERMINISTIC_CXXFLAGS) -Iinclude -c src/mnn_core.cpp -o /tmp/mnn_core_deterministic.o
+	@rm -f /tmp/mnn_core_deterministic.o
+	@echo "Deterministic C++ compile passed."
+
+reproducibility-check:
+	@echo "Running deterministic output check..."
+	@python tools/reproducibility_check.py --query "deterministic systems"
+	@echo "Generating architecture artifacts..."
+	@python tools/generate_architecture_artifacts.py
+	@echo "Reproducibility checks complete."
 
 # Run tests
 test:

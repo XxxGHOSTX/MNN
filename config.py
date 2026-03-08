@@ -48,6 +48,9 @@ class Config:
     # Cache Configuration
     CACHE_SIZE: int = int(os.getenv("CACHE_SIZE", "256"))
 
+    # Determinism control
+    DETERMINISTIC_MODE: bool = os.getenv("DETERMINISTIC_MODE", "true").lower() == "true"
+
     @classmethod
     def validate(cls) -> None:
         """Validate configuration at startup."""

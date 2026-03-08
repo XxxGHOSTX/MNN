@@ -610,6 +610,7 @@ def version_info():
             "rate_limiting": config.RATE_LIMIT_ENABLED,
             "authentication": config.API_AUTH_ENABLED,
             "operator_auth": True,
+            "deterministic_mode": config.DETERMINISTIC_MODE,
             "database": bool(config.THALOS_DB_DSN),
             "redis": bool(config.REDIS_URL),
             "minio": bool(config.MINIO_ENDPOINT),

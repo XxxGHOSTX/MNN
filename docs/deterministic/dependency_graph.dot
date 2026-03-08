@@ -1,0 +1,21 @@
+digraph thalos_prime {
+  rankdir=LR;
+  node [shape=box, style=rounded];
+
+  api [label="api.py (control plane)"];
+  mainpy [label="main.py (pipeline orchestrator)"];
+  mnnpipe [label="mnn_pipeline/*"];
+  mnncore [label="src/mnn_core.cpp"];
+  middleware [label="middleware.py (bridge)"];
+  metrics [label="metrics.py"];
+  security [label="security.py"];
+  feedback [label="feedback.py"];
+
+  api -> mainpy;
+  api -> mnnpipe;
+  api -> metrics;
+  api -> security;
+  api -> feedback;
+  mainpy -> mnnpipe;
+  middleware -> mnncore;
+}

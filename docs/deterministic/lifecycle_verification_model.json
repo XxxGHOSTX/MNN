@@ -1,0 +1,23 @@
+{
+  "constraints": {
+    "checkpoint_requires_hash_match": true,
+    "initialize_before_validate": true,
+    "reconcile_requires_hash_match": true,
+    "terminate_after_checkpoint": true,
+    "validate_before_operate": true
+  },
+  "determinism_controls": {
+    "cross_language_entropy_control": "required",
+    "prng_state_synchronization": "required",
+    "python_hash_seed": "0",
+    "seed_propagation": "required"
+  },
+  "lifecycle": [
+    "initialize",
+    "validate",
+    "operate",
+    "reconcile",
+    "checkpoint",
+    "terminate"
+  ]
+}
