@@ -1,0 +1,192 @@
+{
+  "identity": {
+    "persona": "E1",
+    "mission": "Create a deterministic, high-performance dashboard for MNN operators. Fusion of 'Swiss Precision' and 'Cyber-Physical' aesthetics.",
+    "principles": [
+      "Fusion over Imitation: Mix Technical Documentation aesthetics with FinTech precision.",
+      "Emotion First: The operator feels 'In Control' and 'Alert'.",
+      "Content is King: Data legibility is paramount. No decoration without function.",
+      "Zoom In: High density data, focus on anomalies.",
+      "Negative Space: Use it to separate logical groups, not just for air."
+    ]
+  },
+  "tech_stack": {
+    "framework": "React",
+    "builder": "Vite",
+    "styling": "Tailwind CSS",
+    "components": "Shadcn/UI",
+    "icons": "Lucide React",
+    "charts": "Recharts",
+    "state_management": "React Context / Hooks",
+    "notifications": "Sonner"
+  },
+  "design_system": {
+    "theme_strategy": "The Performance Pro (Archetype 2)",
+    "colors": {
+      "mode": "dark",
+      "palette": {
+        "background": "#050505",
+        "surface": "#0A0A0A",
+        "surface_highlight": "#121212",
+        "border": "#262626",
+        "text_primary": "#FFFFFF",
+        "text_secondary": "#A1A1AA",
+        "primary": "#007AFF",
+        "primary_foreground": "#FFFFFF",
+        "accent_success": "#10B981",
+        "accent_warning": "#F59E0B",
+        "accent_error": "#EF4444",
+        "grid_line": "rgba(255, 255, 255, 0.05)"
+      }
+    },
+    "typography": {
+      "font_family_headings": "Chivo, sans-serif",
+      "font_family_body": "IBM Plex Sans, sans-serif",
+      "font_family_code": "JetBrains Mono, monospace",
+      "weights": {
+        "heading": "900",
+        "body_bold": "600",
+        "body_regular": "400"
+      },
+      "sizes": {
+        "h1": "text-4xl md:text-5xl tracking-tight",
+        "h2": "text-2xl md:text-3xl tracking-tight",
+        "body": "text-sm leading-relaxed",
+        "mono": "text-xs tracking-wide"
+      }
+    },
+    "spacing": {
+      "scale": "Generous (2x standard)",
+      "container_padding": "p-6 md:p-8",
+      "grid_gap": "gap-6"
+    },
+    "borders": {
+      "radius": "rounded-sm",
+      "width": "border",
+      "style": "solid",
+      "color": "border-white/10"
+    },
+    "shadows": {
+      "card": "shadow-[0_0_0_1px_rgba(255,255,255,0.05)]",
+      "glow": "shadow-[0_0_20px_rgba(0,122,255,0.15)]"
+    }
+  },
+  "layout_strategies": {
+    "dashboard_grid": {
+      "type": "Bento Grid (Mode B)",
+      "cols": "grid-cols-1 md:grid-cols-12",
+      "gap": "gap-4 md:gap-6",
+      "areas": {
+        "kpi_bar": "col-span-full h-auto",
+        "main_chart": "col-span-full md:col-span-8 row-span-2",
+        "status_panel": "col-span-full md:col-span-4 row-span-2",
+        "query_runner": "col-span-full md:col-span-6",
+        "feedback_log": "col-span-full md:col-span-6"
+      }
+    },
+    "auth_layout": {
+      "type": "Centered Split",
+      "visual": "Left: Abstract Server Art (Dark), Right: Glass Login Form"
+    }
+  },
+  "components": {
+    "Button": {
+      "style": "Sharp edges or minimal rounding (rounded-sm). High contrast hover states.",
+      "variants": {
+        "default": "bg-primary text-primary-foreground hover:bg-primary/90",
+        "outline": "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+        "ghost": "hover:bg-accent hover:text-accent-foreground"
+      }
+    },
+    "Card": {
+      "style": "Flat background (#0A0A0A), 1px border (#262626). No heavy drop shadows. Inner padding p-6."
+    },
+    "Input": {
+      "style": "bg-black/20 border-white/10 focus:border-primary focus:ring-1 focus:ring-primary rounded-sm font-mono text-sm"
+    },
+    "StatusBadge": {
+      "style": "Inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
+      "variants": {
+        "healthy": "bg-green-500/10 text-green-500 border border-green-500/20",
+        "degraded": "bg-yellow-500/10 text-yellow-500 border border-yellow-500/20",
+        "down": "bg-red-500/10 text-red-500 border border-red-500/20"
+      }
+    }
+  },
+  "assets": {
+    "images": [
+      {
+        "category": "auth_background",
+        "url": "https://images.unsplash.com/photo-1698668975271-2ba9a323be6b?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMjd8MHwxfHNlYXJjaHwxfHx0ZWNobm9sb2d5JTIwYWJzdHJhY3QlMjBzZXJ2ZXIlMjBuZXR3b3JrfGVufDB8fHx8MTc3MzAwNzM0N3ww&ixlib=rb-4.1.0&q=85",
+        "description": "Dark server rack abstract for login page background"
+      },
+      {
+        "category": "empty_state",
+        "url": "https://images.unsplash.com/photo-1664526937033-fe2c11f1be25?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMjd8MHwxfHNlYXJjaHwyfHx0ZWNobm9sb2d5JTIwYWJzdHJhY3QlMjBzZXJ2ZXIlMjBuZXR3b3JrfGVufDB8fHx8MTc3MzAwNzM0N3ww&ixlib=rb-4.1.0&q=85",
+        "description": "Technical diagram for empty states or loading screens"
+      }
+    ]
+  },
+  "pages_and_flows": {
+    "Login": {
+      "path": "/login",
+      "elements": [
+        "Full screen layout",
+        "Left side: Image with overlay (black/60)",
+        "Right side: Login form (Email/Password)",
+        "Backend URL configuration toggle (Advanced Settings)"
+      ]
+    },
+    "Dashboard": {
+      "path": "/",
+      "sections": [
+        {
+          "name": "Header",
+          "elements": ["Logo (Text: MNN OPS)", "Connection Status Indicator", "Logout Button"]
+        },
+        {
+          "name": "MetricsRow",
+          "elements": ["Total Requests (Counter)", "Avg Latency (Gauge)", "Error Rate (Sparkline)"]
+        },
+        {
+          "name": "MainContent",
+          "elements": [
+            "QueryRunner: Textarea for input, 'Run' button, JSON Output display (Monospace)",
+            "SystemStatus: List of services (API, DB, MNN Core) with health badges"
+          ]
+        },
+        {
+          "name": "FeedbackStats",
+          "elements": ["Bar chart showing recent feedback distribution"]
+        }
+      ]
+    }
+  },
+  "universal_guidelines": {
+    "general": [
+      "Avoid 'AI Slop': No generic gradients, no centered layouts without purpose.",
+      "Dark colors must be solid or subtle noise, NO dark gradients.",
+      "Create depth via z-index and 1px borders, not heavy shadows.",
+      "Use 'sonner' for toasts.",
+      "All interactive elements must have data-testid attributes.",
+      "Use Lucide-React for icons.",
+      "Micro-animations on all interactive elements (hover, focus, active)."
+    ],
+    "file_structure": [
+      "Components: /app/frontend/src/components/ui/",
+      "Pages: /app/frontend/src/pages/",
+      "Hooks: /app/frontend/src/hooks/",
+      "Services: /app/frontend/src/services/"
+    ]
+  },
+  "instructions_to_main_agent": [
+    "1. Initialize React + Vite project in /app/frontend.",
+    "2. Install Tailwind CSS and Shadcn/UI dependencies.",
+    "3. Configure Tailwind theme with the 'Performance Pro' palette.",
+    "4. Create the Auth layout and Login page first.",
+    "5. Implement the Dashboard layout with the Bento Grid.",
+    "6. Build the Query Runner component with 'JetBrains Mono' for input/output.",
+    "7. Mock data service first, then integrate with Python backend.",
+    "8. Ensure all 'data-testid' attributes are present."
+  ]
+}
