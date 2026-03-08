@@ -1,6 +1,7 @@
 {
   "constraints": {
     "checkpoint_requires_hash_match": true,
+    "deterministic_halt_on_violation": true,
     "initialize_before_validate": true,
     "reconcile_requires_hash_match": true,
     "terminate_after_checkpoint": true,
@@ -19,5 +20,10 @@
     "reconcile",
     "checkpoint",
     "terminate"
-  ]
+  ],
+  "nexus_v3_modules": {
+    "mitochondria": "execution governor + deterministic halt",
+    "nucleus": "deterministic ingestion + validation",
+    "spine": "hash-chained JSONL provenance log"
+  }
 }

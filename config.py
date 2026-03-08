@@ -50,6 +50,8 @@ class Config:
 
     # Determinism control
     DETERMINISTIC_MODE: bool = os.getenv("DETERMINISTIC_MODE", "true").lower() == "true"
+    DETERMINISTIC_ROOT_SEED: int = int(os.getenv("DETERMINISTIC_ROOT_SEED", "2026"))
+    DETERMINISTIC_AUDIT_LOG_PATH: str = os.getenv("DETERMINISTIC_AUDIT_LOG_PATH", "/app/logs/deterministic/run.jsonl")
 
     @classmethod
     def validate(cls) -> None:

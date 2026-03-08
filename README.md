@@ -35,6 +35,29 @@ python tools/reproducibility_check.py --query "deterministic systems"
 python tools/generate_architecture_artifacts.py
 ```
 
+## Deterministic Runtime + Formal + Replay (Milestones B/C/D)
+
+New modules under `mnn/deterministic/` provide:
+
+- Lifecycle state-machine enforcement with deterministic halt snapshots
+- Cross-language RNG descriptor parity (Python/C++)
+- Basile coordinate-to-text deterministic generation (base-29)
+- Hash-chained JSONL logging and replay validation
+- Formal lifecycle proofs via Z3 (+ optional pySMT)
+- mmap corpus processing with optional PyArrow indexing
+
+Key commands:
+
+```bash
+make verify-lifecycle
+make cross-language-rng-check
+make benchmark-deterministic
+
+# replay and generation CLI
+./thalos replay --log /app/logs/deterministic/run.jsonl
+./thalos generate --coordinate 42 --seed 2026 --length 4096
+```
+
 ## Operator Web App (Auth + Dashboard)
 
 This repository now includes a deployable React/Vite operator dashboard under `frontend/` with:

@@ -49,4 +49,5 @@ __all__ = [
     "pipeline",
     "main",
     "api",
+    "deterministic",
 ]

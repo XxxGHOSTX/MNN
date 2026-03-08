@@ -34,6 +34,8 @@ bash scripts/verify_docker_reproducibility.sh
 ```bash
 python tools/reproducibility_check.py --query "deterministic systems"
 python tools/generate_architecture_artifacts.py
+python tools/verify_lifecycle_formal.py
+python tools/cross_language_rng_check.py
 ```
 
 ## Build determinism policies

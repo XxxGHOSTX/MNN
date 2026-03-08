@@ -1,4 +1,4 @@
-.PHONY: help setup install lint test verify smoke build run run-docker compose-up compose-down clean fmt cpp-deterministic reproducibility-check
+.PHONY: help setup install lint test verify smoke build run run-docker compose-up compose-down clean fmt cpp-deterministic reproducibility-check verify-lifecycle cross-language-rng-check benchmark-deterministic
 
 DETERMINISTIC_CXXFLAGS=-std=c++17 -O2 -fno-fast-math -ffp-contract=off -fno-common
 
@@ -19,6 +19,9 @@ help:
 	@echo "compose-down   - Stop services with docker compose"
 	@echo "cpp-deterministic - Compile C++ core with deterministic flags"
 	@echo "reproducibility-check - Run deterministic output and architecture artifact checks"
+	@echo "verify-lifecycle - Run Z3/pySMT lifecycle formal checks"
+	@echo "cross-language-rng-check - Verify Python/C++ deterministic descriptor parity"
+	@echo "benchmark-deterministic - Run deterministic benchmark and drift check"
 	@echo "clean          - Clean build artifacts and caches"
 	@echo "fmt            - Format code (stub - no formatter configured)"
 
@@ -70,7 +73,9 @@ lint:
 verify: lint test
 	@echo "Running C++ core sanity compile..."
 	@g++ $(DETERMINISTIC_CXXFLAGS) -Iinclude -c src/mnn_core.cpp -o /tmp/mnn_core_sanity.o
+	@g++ $(DETERMINISTIC_CXXFLAGS) -Iinclude -c src/deterministic_state.cpp -o /tmp/deterministic_state_sanity.o
 	@rm -f /tmp/mnn_core_sanity.o
+	@rm -f /tmp/deterministic_state_sanity.o
 	@echo "C++ sanity compile passed."
 	@echo "Running verification agent..."
 	@python -m tools.verify
@@ -79,15 +84,30 @@ verify: lint test
 cpp-deterministic:
 	@echo "Compiling C++ core with deterministic flags..."
 	@g++ $(DETERMINISTIC_CXXFLAGS) -Iinclude -c src/mnn_core.cpp -o /tmp/mnn_core_deterministic.o
+	@g++ $(DETERMINISTIC_CXXFLAGS) -Iinclude -c src/deterministic_state.cpp -o /tmp/deterministic_state_deterministic.o
 	@rm -f /tmp/mnn_core_deterministic.o
+	@rm -f /tmp/deterministic_state_deterministic.o
 	@echo "Deterministic C++ compile passed."
 
 reproducibility-check:
 	@echo "Running deterministic output check..."
 	@python tools/reproducibility_check.py --query "deterministic systems"
+	@echo "Running formal lifecycle verification..."
+	@python tools/verify_lifecycle_formal.py
+	@echo "Running cross-language RNG descriptor parity check..."
+	@python tools/cross_language_rng_check.py
 	@echo "Generating architecture artifacts..."
 	@python tools/generate_architecture_artifacts.py
 	@echo "Reproducibility checks complete."
+
+verify-lifecycle:
+	@python tools/verify_lifecycle_formal.py
+
+cross-language-rng-check:
+	@python tools/cross_language_rng_check.py
+
+benchmark-deterministic:
+	@python tools/deterministic_benchmark.py
 
 # Run tests
 test:

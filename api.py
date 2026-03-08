@@ -8,6 +8,7 @@ queries and receive deterministic, ranked results.
 
 import hmac
 import os
+from pathlib import Path
 from functools import lru_cache
 from typing import List, Dict, Any, Optional
 
@@ -17,6 +18,12 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, Field
 
 from main import _execute_pipeline
+from mnn.deterministic.control_plane import NeuroSymbolicControlPlane
+from mnn.deterministic.exceptions import DeterministicHalt
+from mnn.deterministic.formal import prove_lifecycle_invariants
+from mnn.deterministic.basile import generate_basile_volume, coordinate_to_base29
+from mnn.deterministic.replay import replay_log
+from mnn.deterministic.utils import sha256_hex
 from mnn_pipeline import normalize_query
 from config import config
 from auth_utils import create_access_token, verify_access_token
@@ -59,10 +66,18 @@ app = FastAPI(
             "name": "dashboard",
             "description": "Operational dashboard endpoints",
         },
+        {
+            "name": "deterministic",
+            "description": "Deterministic verification, replay, and formal proofs",
+        },
     ],
 )
 
 http_bearer = HTTPBearer(auto_error=False)
+control_plane = NeuroSymbolicControlPlane(
+    log_path=Path(config.DETERMINISTIC_AUDIT_LOG_PATH),
+    root_seed=config.DETERMINISTIC_ROOT_SEED,
+)
 
 # Add CORS middleware (configure allowed origins as needed)
 app.add_middleware(
@@ -149,6 +164,31 @@ class UserProfileResponse(BaseModel):
 
     username: str
     auth_enabled_for_query_endpoint: bool
+
+
+class ReplayRequest(BaseModel):
+    """Replay request model for deterministic audit verification."""
+
+    log_path: str = Field(..., min_length=1)
+    assert_hash: Optional[str] = None
+
+
+class ReplayResponse(BaseModel):
+    """Replay verification response model."""
+
+    ok: bool
+    final_hash: str
+    errors: List[str]
+    regenerated_hashes: List[str]
+
+
+class BasileGenerateRequest(BaseModel):
+    """Request to deterministically generate corpus from coordinate."""
+
+    coordinate: int = Field(..., ge=0)
+    seed: int = Field(..., ge=0)
+    query: str = Field(default="", max_length=500)
+    volume_length: int = Field(default=4096, ge=1, le=1_312_000)
 
 
 class FeedbackRequest(BaseModel):
@@ -301,6 +341,9 @@ def root():
             "/docs": "Interactive API documentation",
             "/auth/login": "POST operator login",
             "/dashboard/overview": "GET authenticated dashboard data",
+            "/deterministic/proofs": "GET formal lifecycle proof status",
+            "/deterministic/replay": "POST replay verification for hash-chained logs",
+            "/deterministic/basile/generate": "POST deterministic coordinate-to-text generation",
         },
         "example": {
             "curl": 'curl -X POST "http://localhost:8000/query" -H "Content-Type: application/json" -d \'{"query":"artificial intelligence"}\'',
@@ -381,9 +424,21 @@ def query_endpoint(request: QueryRequest, http_request: Request):
         # Security validation
         validate_query_security(request.query, max_length=config.MAX_QUERY_LENGTH)
 
-        # Execute cached pipeline (will raise ValueError if normalized query is empty)
+        # Execute deterministic pipeline under neuro-symbolic control plane
         try:
-            results = cached_pipeline(request.query)
+            if config.DETERMINISTIC_MODE:
+                deterministic_result = control_plane.run_query(request.query, cached_pipeline)
+                results = deterministic_result["results"]
+                logger.info(
+                    "Deterministic run completed",
+                    extra={
+                        "run_id": deterministic_result.get("run_id"),
+                        "result_hash": deterministic_result.get("result_hash"),
+                    },
+                )
+            else:
+                results = cached_pipeline(request.query)
+
             logger.info(f"Query processed successfully, returned {len(results)} results")
             
             # Track success
@@ -401,6 +456,12 @@ def query_endpoint(request: QueryRequest, http_request: Request):
             metrics.observe_histogram('mnn_query_duration_seconds', duration, {'status': 'error'})
             metrics.increment_counter('mnn_queries_error_total', labels={'error_type': 'validation_error'})
             raise HTTPException(status_code=400, detail=str(ve))
+        except DeterministicHalt as halt_error:
+            logger.error(f"Deterministic halt triggered: {halt_error}")
+            duration = time.time() - start_time
+            metrics.observe_histogram('mnn_query_duration_seconds', duration, {'status': 'error'})
+            metrics.increment_counter('mnn_queries_error_total', labels={'error_type': 'deterministic_halt'})
+            raise HTTPException(status_code=409, detail="Deterministic invariant violation detected")
 
         # Get normalized query for response
         normalized = normalize_query(request.query)
@@ -543,6 +604,61 @@ def infra_status(current_user: Dict[str, Any] = Depends(get_current_user)):
     return {
         "user": current_user["username"],
         "services": get_infra_status(config),
+    }
+
+
+@app.get("/deterministic/proofs", tags=["deterministic"])
+def deterministic_proofs(current_user: Dict[str, Any] = Depends(get_current_user)):
+    """Run formal lifecycle invariant checks (Z3 + optional pySMT)."""
+    result = prove_lifecycle_invariants()
+    return {
+        "user": current_user["username"],
+        "proof": result,
+    }
+
+
+@app.post("/deterministic/replay", response_model=ReplayResponse, tags=["deterministic"])
+def deterministic_replay(request: ReplayRequest, current_user: Dict[str, Any] = Depends(get_current_user)):
+    """Verify hash-chained audit log and optional final digest assertion."""
+    result = replay_log(request.log_path, assert_hash=request.assert_hash)
+    logger.info(
+        "Replay validation executed",
+        extra={
+            "user": current_user["username"],
+            "log_path": request.log_path,
+            "ok": result.ok,
+            "final_hash": result.final_hash,
+        },
+    )
+    return ReplayResponse(
+        ok=result.ok,
+        final_hash=result.final_hash,
+        errors=result.errors,
+        regenerated_hashes=result.regenerated_hashes,
+    )
+
+
+@app.post("/deterministic/basile/generate", tags=["deterministic"])
+def deterministic_basile_generate(
+    request: BasileGenerateRequest,
+    current_user: Dict[str, Any] = Depends(get_current_user),
+):
+    """Generate deterministic corpus volume and return digest + coordinate descriptor."""
+    text = generate_basile_volume(
+        coordinate=request.coordinate,
+        seed=request.seed,
+        query=request.query,
+        volume_length=request.volume_length,
+    )
+    digest = sha256_hex(text)
+    return {
+        "user": current_user["username"],
+        "coordinate": request.coordinate,
+        "base29": coordinate_to_base29(request.coordinate),
+        "seed": request.seed,
+        "volume_length": request.volume_length,
+        "output_hash": digest,
+        "preview": text[:200],
     }
 
 

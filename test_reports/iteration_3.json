@@ -1,0 +1,57 @@
+{
+  "summary": "Executed independent backend verification for deterministic runtime features and auth/dashboard regression. All requested deterministic endpoint flows, replay integrity, RNG parity, and formal verifier script passed.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "/deterministic/replay",
+        "issue": "Authenticated user can provide arbitrary server file path via log_path; endpoint reads that path directly without allowlist/sandbox, creating high-risk local file read surface.",
+        "priority": "HIGH"
+      },
+      {
+        "endpoint": "/auth/login token signing",
+        "issue": "When MNN_AUTH_SECRET is unset, code falls back to static string 'mnn-dev-secret-change-me', making JWT signing key predictable.",
+        "priority": "HIGH"
+      }
+    ],
+    "minor": [
+      {
+        "endpoint": "/deterministic/proofs + tools/verify_lifecycle_formal.py",
+        "issue": "pySMT integration is SKIPPED in runtime (not installed). Script still returns success via optional fallback; formal check currently enforced only by Z3 path."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/tests/test_deterministic_runtime_review.py",
+    "/app/tests/test_auth_dashboard.py",
+    "/app/tests/test_cross_language_rng.py",
+    "/app/test_reports/pytest/pytest_iteration3_backend.xml"
+  ],
+  "action_items": [
+    "Restrict /deterministic/replay log_path to deterministic audit directory and reject external paths/symlinks.",
+    "Fail fast if MNN_AUTH_SECRET is missing in non-dev runtime (remove predictable fallback secret).",
+    "Decide whether pySMT must be mandatory for formal verification and enforce accordingly."
+  ],
+  "critical_code_review_comments": [
+    "Replay endpoint currently trusts client-provided filesystem path; this is a security boundary issue even with auth.",
+    "Token secret fallback is deterministic and globally guessable; rotate and enforce env-provided secret.",
+    "Deterministic feature set is functionally healthy: lifecycle/order enforcement, basile hash stability, replay verification, and RNG parity all passed in tests."
+  ],
+  "updated_files": [
+    "/app/tests/test_deterministic_runtime_review.py",
+    "/app/test_reports/iteration_3.json"
+  ],
+  "success_rate": {
+    "backend": "100%",
+    "frontend": "N/A (not requested)"
+  },
+  "seed_data_creation": "None",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Iteration 3 added deterministic runtime regression file and revalidated auth/dashboard + cross-language RNG. pytest set: 14 passed. Formal script passed with Z3; pySMT still skipped in this environment.",
+  "rca of the issue": "RCA-1 (/deterministic/replay): replay() directly forwards request.log_path to replay_log(), which opens filesystem path without canonical path checks -> authenticated file-read primitive. Repro: submit absolute path in log_path. Mitigation: canonicalize path and enforce prefix under deterministic log dir. RCA-2 (auth secret): _get_auth_secret() returns fixed fallback when env missing; JWTs become forgeable if attacker knows default. Mitigation: require env secret except explicit test mode."
+}
