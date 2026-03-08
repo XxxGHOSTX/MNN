@@ -38,7 +38,7 @@ class LifecycleController:
     current_state: Optional[LifecycleState] = None
     state_chain_hash: str = field(default_factory=lambda: "0" * 64)
     transitions: List[Dict[str, Any]] = field(default_factory=list)
-    halt_dump_dir: Path = field(default_factory=lambda: Path("/app/logs/deterministic_halts"))
+    halt_dump_dir: Path = field(default_factory=lambda: Path(__file__).resolve().parent.parent.parent / "logs" / "deterministic_halts")
 
     def transition(
         self,

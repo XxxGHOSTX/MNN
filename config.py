@@ -4,7 +4,10 @@ Configuration management for MNN Pipeline.
 Centralizes all environment variable loading and validation.
 """
 import os
+import pathlib
 from typing import Optional
+
+_BASE_DIR = pathlib.Path(__file__).resolve().parent
 
 
 class Config:
@@ -51,7 +54,10 @@ class Config:
     # Determinism control
     DETERMINISTIC_MODE: bool = os.getenv("DETERMINISTIC_MODE", "true").lower() == "true"
     DETERMINISTIC_ROOT_SEED: int = int(os.getenv("DETERMINISTIC_ROOT_SEED", "2026"))
-    DETERMINISTIC_AUDIT_LOG_PATH: str = os.getenv("DETERMINISTIC_AUDIT_LOG_PATH", "/app/logs/deterministic/run.jsonl")
+    DETERMINISTIC_AUDIT_LOG_PATH: str = os.getenv(
+        "DETERMINISTIC_AUDIT_LOG_PATH",
+        str(_BASE_DIR / "logs" / "deterministic" / "run.jsonl"),
+    )
 
     @classmethod
     def validate(cls) -> None:

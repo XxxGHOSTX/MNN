@@ -96,7 +96,7 @@ def test_deterministic_replay_validates_hash_chained_logs(tmp_path):
 
     output_hash = sha256_hex(generate_basile_volume(coordinate=11, seed=2, query="abc", volume_length=256))
 
-    log_path = Path("/app/logs/deterministic/test_runtime_review_replay.jsonl")
+    log_path = Path(config.DETERMINISTIC_AUDIT_LOG_PATH).parent / "test_runtime_review_replay.jsonl"
     log_path.parent.mkdir(parents=True, exist_ok=True)
     entries = [
         {
