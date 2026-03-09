@@ -870,7 +870,7 @@ make compose-down
 # Clean build artifacts
 make clean
 
-# Format code (placeholder - configure black/ruff to enable)
+# Format code (not configured)
 make fmt
 ```
 
@@ -913,7 +913,7 @@ Expected response:
 }
 ```
 
-The `fmt` target is a placeholder for future code formatting integration. To enable it, install a formatter like `black` or `ruff` and update the Makefile target.
+The `fmt` target has no formatter configured. To enable it, install a formatter like `black` or `ruff` and update the Makefile target.
 
 ### Continuous Integration
 

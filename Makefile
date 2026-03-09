@@ -22,8 +22,9 @@ help:
 	@echo "verify-lifecycle - Run Z3/pySMT lifecycle formal checks"
 	@echo "cross-language-rng-check - Verify Python/C++ deterministic descriptor parity"
 	@echo "benchmark-deterministic - Run deterministic benchmark and drift check"
+	@echo "marker-scan - Scan source files for banned code markers"
 	@echo "clean          - Clean build artifacts and caches"
-	@echo "fmt            - Format code (stub - no formatter configured)"
+	@echo "fmt            - Format code (no formatter configured)"
 
 # Provision the environment (deterministic setup from a clean clone)
 setup: install
@@ -193,7 +194,11 @@ clean:
 	@rm -rf build/ dist/ .coverage htmlcov/ 2>/dev/null || true
 	@echo "Clean complete."
 
-# Format code (stub)
+# Scan source files for banned code markers (see tools/no_placeholders.py for the full list)
+marker-scan:
+	python tools/no_placeholders.py --root . --allowlist tools/no_placeholders_allowlist.json
+
+# Format code
 fmt:
-	@echo "Code formatting stub - no formatter configured."
+	@echo "Code formatting: no formatter configured."
 	@echo "To add formatting, install black or ruff and update this target."

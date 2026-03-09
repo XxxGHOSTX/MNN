@@ -1,0 +1,284 @@
+[
+  {
+    "path": ".github/copilot-instructions.md",
+    "line": 15,
+    "marker": "TODO",
+    "justification": "Enforcement policy table row listing 'TODO' as a banned marker. The file is the definition of the enforcement rules, not a source file with incomplete work."
+  },
+  {
+    "path": ".github/copilot-instructions.md",
+    "line": 16,
+    "marker": "FIXME",
+    "justification": "Enforcement policy table row listing 'FIXME' as a banned marker. The file is the definition of the enforcement rules, not a source file with incomplete work."
+  },
+  {
+    "path": ".github/copilot-instructions.md",
+    "line": 17,
+    "marker": "STUB",
+    "justification": "Enforcement policy table row listing 'STUB' as a banned marker. The file is the definition of the enforcement rules, not a source file with incomplete work."
+  },
+  {
+    "path": ".github/copilot-instructions.md",
+    "line": 17,
+    "marker": "PLACEHOLDER",
+    "justification": "The word 'Placeholder' in 'Placeholder implementation' on this table row describes what a STUB is. This is policy documentation defining the banned STUB marker."
+  },
+  {
+    "path": ".github/copilot-instructions.md",
+    "line": 18,
+    "marker": "MOCK",
+    "justification": "Enforcement policy table row listing 'MOCK' as a banned marker with a nuanced note about named test doubles. The file is the definition of the enforcement rules."
+  },
+  {
+    "path": ".github/copilot-instructions.md",
+    "line": 19,
+    "marker": "PLACEHOLDER",
+    "justification": "Enforcement policy table row listing 'PLACEHOLDER' as a banned marker. The file is the definition of the enforcement rules, not a source file with incomplete work."
+  },
+  {
+    "path": ".github/copilot-instructions.md",
+    "line": 20,
+    "marker": "TBD",
+    "justification": "Enforcement policy table row listing 'TBD' as a banned marker. The file is the definition of the enforcement rules, not a source file with incomplete work."
+  },
+  {
+    "path": ".github/copilot-instructions.md",
+    "line": 21,
+    "marker": "HACK",
+    "justification": "Enforcement policy table row listing 'HACK' as a banned marker. The file is the definition of the enforcement rules, not a source file with incomplete work."
+  },
+  {
+    "path": ".github/copilot-instructions.md",
+    "line": 22,
+    "marker": "XXX",
+    "justification": "Enforcement policy table row listing 'XXX' as a banned marker. The file is the definition of the enforcement rules, not a source file with incomplete work."
+  },
+  {
+    "path": ".github/copilot-instructions.md",
+    "line": 24,
+    "marker": "PLACEHOLDER",
+    "justification": "The word 'placeholder' here refers to the tool name 'placeholder scanner' — it describes what the scanner detects, not a placeholder implementation in this file."
+  },
+  {
+    "path": ".github/copilot-instructions.md",
+    "line": 28,
+    "marker": "TODO",
+    "justification": "Describes the allowlist usage example: 'a documentation example that must literally contain the word TODO'. This is meta-documentation explaining the allowlist mechanism."
+  },
+  {
+    "path": ".github/copilot-instructions.md",
+    "line": 65,
+    "marker": "TODO",
+    "justification": "Explains that TODO comments are treated the same as dead code. This is enforcement policy documentation, not an incomplete implementation marker."
+  },
+  {
+    "path": ".github/copilot-instructions.md",
+    "line": 77,
+    "marker": "PLACEHOLDER",
+    "justification": "The word 'placeholder-scan' in the CI pipeline stage list is the name of the CI job that runs the placeholder scanner, not an incomplete-work marker."
+  },
+  {
+    "path": ".github/copilot-instructions.md",
+    "line": 104,
+    "marker": "PLACEHOLDER",
+    "justification": "The phrase 'placeholder scanner' describes the tool no_placeholders.py by its purpose (scanning for placeholder markers), not a placeholder implementation."
+  },
+  {
+    "path": ".github/copilot-instructions.md",
+    "line": 126,
+    "marker": "PLACEHOLDER",
+    "justification": "The command comment '# Placeholder scan' names the CI gate operation. It refers to the scanner tool, not incomplete work."
+  },
+  {
+    "path": ".github/pull_request_template.md",
+    "line": 31,
+    "marker": "TODO",
+    "justification": "PR checklist item listing the banned markers that the placeholder scanner checks for. This is the enforcement checklist, not incomplete work."
+  },
+  {
+    "path": ".github/pull_request_template.md",
+    "line": 31,
+    "marker": "FIXME",
+    "justification": "PR checklist item listing 'FIXME' as one of the markers the placeholder scanner checks for. Enforcement checklist documentation."
+  },
+  {
+    "path": ".github/pull_request_template.md",
+    "line": 31,
+    "marker": "STUB",
+    "justification": "PR checklist item listing 'STUB' as one of the markers the placeholder scanner checks for. Enforcement checklist documentation."
+  },
+  {
+    "path": ".github/pull_request_template.md",
+    "line": 31,
+    "marker": "MOCK",
+    "justification": "PR checklist item listing 'MOCK' as one of the markers the placeholder scanner checks for. Enforcement checklist documentation."
+  },
+  {
+    "path": ".github/pull_request_template.md",
+    "line": 31,
+    "marker": "PLACEHOLDER",
+    "justification": "PR checklist item listing 'PLACEHOLDER' as one of the markers the placeholder scanner checks for. Enforcement checklist documentation."
+  },
+  {
+    "path": ".github/pull_request_template.md",
+    "line": 31,
+    "marker": "TBD",
+    "justification": "PR checklist item listing 'TBD' as one of the markers the placeholder scanner checks for. Enforcement checklist documentation."
+  },
+  {
+    "path": ".github/pull_request_template.md",
+    "line": 31,
+    "marker": "HACK",
+    "justification": "PR checklist item listing 'HACK' as one of the markers the placeholder scanner checks for. Enforcement checklist documentation."
+  },
+  {
+    "path": ".github/pull_request_template.md",
+    "line": 31,
+    "marker": "XXX",
+    "justification": "PR checklist item listing 'XXX' as one of the markers the placeholder scanner checks for. Enforcement checklist documentation."
+  },
+  {
+    "path": "README.md",
+    "line": 797,
+    "marker": "MOCK",
+    "justification": "Describes the complete graceful mock fallback feature of the infra status system. This is a fully-implemented degradation strategy, not a stub or incomplete implementation."
+  },
+  {
+    "path": "docs/SUMMARY.md",
+    "line": 42,
+    "marker": "MOCK",
+    "justification": "Technical documentation accurately describing the in-memory mock implementation in src/buffer/relational_buffer.py, which is a complete, functional test implementation."
+  },
+  {
+    "path": "docs/SUMMARY.md",
+    "line": 200,
+    "marker": "MOCK",
+    "justification": "Roadmap note in documentation describing a future enhancement to replace the in-memory implementation with real PostgreSQL. The in-memory version is fully functional."
+  },
+  {
+    "path": "frontend/src/components/ui/badge.jsx",
+    "line": 7,
+    "marker": "MOCK",
+    "justification": "CSS variant class name 'mock' in a Tailwind CSS style map. This is a UI style definition, not a placeholder implementation."
+  },
+  {
+    "path": "frontend/src/components/ui/input.jsx",
+    "line": 6,
+    "marker": "PLACEHOLDER",
+    "justification": "Tailwind CSS pseudo-element class 'placeholder:text-zinc-500' styles the HTML input placeholder attribute. This is valid CSS syntax, not an incomplete implementation marker."
+  },
+  {
+    "path": "frontend/src/pages/DashboardPage.jsx",
+    "line": 20,
+    "marker": "MOCK",
+    "justification": "The string 'mock' is an operational mode value returned by the infra status API. This is a complete service mode discriminator, not a stub."
+  },
+  {
+    "path": "frontend/src/pages/DashboardPage.jsx",
+    "line": 200,
+    "marker": "MOCK",
+    "justification": "UI label displaying 'MOCK' for services in graceful-degradation mode. This is an intentional, production-ready fallback status indicator."
+  },
+  {
+    "path": "frontend/src/pages/LoginPage.jsx",
+    "line": 113,
+    "marker": "PLACEHOLDER",
+    "justification": "HTML input placeholder attribute providing example hint text. This is standard HTML, not a code-level incomplete-implementation marker."
+  },
+  {
+    "path": "infra_status.py",
+    "line": 1,
+    "marker": "MOCK",
+    "justification": "Module docstring accurately describing the complete graceful mock fallback behavior. The module is fully implemented — 'mock' is the name of the fallback mode, not a placeholder."
+  },
+  {
+    "path": "infra_status.py",
+    "line": 18,
+    "marker": "MOCK",
+    "justification": "Returns a complete, structured fallback service status with mode='mock' when PostgreSQL DSN is not configured. This is a fully-implemented graceful degradation response, not a stub."
+  },
+  {
+    "path": "infra_status.py",
+    "line": 32,
+    "marker": "MOCK",
+    "justification": "Returns a complete, structured fallback service status with mode='mock' when REDIS_URL is not configured. This is a fully-implemented graceful degradation response, not a stub."
+  },
+  {
+    "path": "infra_status.py",
+    "line": 46,
+    "marker": "MOCK",
+    "justification": "Returns a complete, structured fallback service status with mode='mock' when MINIO_ENDPOINT is not configured. This is a fully-implemented graceful degradation response, not a stub."
+  },
+  {
+    "path": "infra_status.py",
+    "line": 64,
+    "marker": "MOCK",
+    "justification": "Returns a complete, structured fallback service status with mode='mock' when KEYCLOAK_URL is not configured. This is a fully-implemented graceful degradation response, not a stub."
+  },
+  {
+    "path": "memory/PRD.md",
+    "line": 10,
+    "marker": "MOCK",
+    "justification": "Product requirement documenting the intentional mock/fallback behavior design goal. This is architectural documentation, not code with incomplete work."
+  },
+  {
+    "path": "memory/PRD.md",
+    "line": 18,
+    "marker": "MOCK",
+    "justification": "PRD changelog entry documenting the completed infra-status mock fallback feature. This describes completed work, not pending work."
+  },
+  {
+    "path": "mnn/README_MNN.md",
+    "line": 402,
+    "marker": "STUB",
+    "justification": "The line reads 'No TODOs or stub implementations' — this is an inverse reference confirming the ABSENCE of stubs in the module, not the presence of one."
+  },
+  {
+    "path": "src/buffer/relational_buffer.py",
+    "line": 63,
+    "marker": "MOCK",
+    "justification": "Docstring for the RelationalBuffer class, which is a fully-implemented in-memory database simulation. The term 'mock implementation' describes its role in tests, not incomplete code."
+  },
+  {
+    "path": "src/buffer/relational_buffer.py",
+    "line": 72,
+    "marker": "MOCK",
+    "justification": "Docstring parameter note indicating the connection string is optional for the in-memory mode. The class is fully implemented."
+  },
+  {
+    "path": "src/buffer/relational_buffer.py",
+    "line": 77,
+    "marker": "MOCK",
+    "justification": "Inline comment labeling the in-memory storage dict for the implemented mock mode. The data structure is fully initialized and used throughout the class."
+  },
+  {
+    "path": "src/buffer/relational_buffer.py",
+    "line": 88,
+    "marker": "MOCK",
+    "justification": "Inline comment labeling the in-memory connect() method for the implemented mock mode. The method is fully implemented."
+  },
+  {
+    "path": "src/buffer/relational_buffer.py",
+    "line": 100,
+    "marker": "MOCK",
+    "justification": "Inline comment labeling the in-memory initialize_schema() method. The method is fully implemented and functional."
+  },
+  {
+    "path": "src/buffer/relational_buffer.py",
+    "line": 102,
+    "marker": "MOCK",
+    "justification": "Print statement confirming schema initialization in mock mode. This is complete diagnostic output for the in-memory implementation."
+  },
+  {
+    "path": "tests/test_auth_dashboard.py",
+    "line": 85,
+    "marker": "MOCK",
+    "justification": "Test assertion verifying that service mode values are one of {'mock', 'real'}. The string 'mock' is expected test data matching the infra_status.py graceful fallback mode."
+  },
+  {
+    "path": "tests/test_middleware.py",
+    "line": 9,
+    "marker": "MOCK",
+    "justification": "Standard Python unittest.mock library import. This is the canonical test utility from the Python standard library, not a placeholder implementation."
+  }
+]
