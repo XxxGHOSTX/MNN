@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Dict, List
 
@@ -21,7 +21,9 @@ class NeuroSymbolicControlPlane:
     - Mitochondria: execution guard and halt policy
     """
 
-    log_path: Path = Path("/app/logs/deterministic/run.jsonl")
+    log_path: Path = field(
+        default_factory=lambda: Path(__file__).resolve().parent.parent.parent / "logs" / "deterministic" / "run.jsonl"
+    )
     root_seed: int = 2026
 
     def run_query(self, query: str, execute_fn: Callable[[str], List[Dict[str, Any]]]) -> Dict[str, Any]:

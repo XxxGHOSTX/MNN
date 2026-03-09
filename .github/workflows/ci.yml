@@ -101,12 +101,18 @@ jobs:
           pip install pysmt
 
       - name: Run formal lifecycle verification
+        env:
+          DETERMINISTIC_AUDIT_LOG_PATH: /tmp/mnn_deterministic_logs/run.jsonl
         run: make verify-lifecycle
 
       - name: Run cross-language RNG check
+        env:
+          DETERMINISTIC_AUDIT_LOG_PATH: /tmp/mnn_deterministic_logs/run.jsonl
         run: make cross-language-rng-check
 
       - name: Run deterministic benchmark check
+        env:
+          DETERMINISTIC_AUDIT_LOG_PATH: /tmp/mnn_deterministic_logs/run.jsonl
         run: make benchmark-deterministic
 
   frontend-build:
@@ -176,6 +182,8 @@ jobs:
           pip install -r requirements.txt
       
       - name: Run tests
+        env:
+          DETERMINISTIC_AUDIT_LOG_PATH: /tmp/mnn_deterministic_logs/run.jsonl
         run: make test
 
   verify:
