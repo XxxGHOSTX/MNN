@@ -11,11 +11,17 @@ on:
 jobs:
   analyze:
     name: Analyze (${{ matrix.language }})
+    # Use macOS only if you add Swift later; otherwise ubuntu is used
     runs-on: ${{ (matrix.language == 'swift' && 'macos-latest') || 'ubuntu-latest' }}
 
     permissions:
+      # required for all CodeQL workflows
       security-events: write
+
+      # required to fetch internal or private CodeQL packs
       packages: read
+
+      # recommended for private repos
       actions: read
       contents: read
 
@@ -23,25 +29,27 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # GitHub Actions workflows
+          # GitHub Actions workflow analysis
           - language: actions
             build-mode: none
 
-          # C++ core (for your C/C++ parts)
+          # C/C++ analysis for your C++ code
           - language: c-cpp
             build-mode: autobuild
 
-          # Frontend (JavaScript in frontend/)
+          # JavaScript analysis for your frontend (Vite + React)
           - language: javascript-typescript
             build-mode: none
 
-          # Python engine
+          # Python analysis for your Python code
           - language: python
             build-mode: none
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      # --- Toolchain setup ---
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -61,11 +69,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential
 
+      # --- Optional dependency installs for better analysis fidelity ---
+
       - name: Install Python dependencies
         if: matrix.language == 'python'
         run: |
           if [ -f requirements.txt ]; then
-            pip install --upgrade pip
+            python -m pip install --upgrade pip
             pip install -r requirements.txt
           fi
 
@@ -77,21 +87,27 @@ jobs:
             npm install
           fi
 
+      # --- Initialize CodeQL ---
+
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
-          # To enable more checks, uncomment the next line:
+          # To enable a broader set of checks, uncomment this line:
           # queries: +security-extended,security-and-quality
+
+      # --- Manual build hook (not used right now, only if you change build-mode to "manual") ---
 
       - name: Run manual build steps
         if: matrix.build-mode == 'manual'
         shell: bash
         run: |
           echo 'build-mode is "manual" but no build commands are configured.'
-          echo 'Replace this step with real build commands if you switch a language to manual.'
+          echo 'If you change a language entry to build-mode: manual, replace this step with the commands to build your code.'
           exit 1
+
+      # --- Run analysis ---
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4
