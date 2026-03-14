@@ -3,12 +3,16 @@
 ARG PYTHON_IMAGE=python:3.12.8-slim-bookworm
 FROM ${PYTHON_IMAGE}
 
+LABEL org.opencontainers.image.created=1970-01-01T00:00:00Z
+
+ARG SOURCE_DATE_EPOCH=0
+
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONHASHSEED=0 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    SOURCE_DATE_EPOCH=1704067200 \
+    SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH} \
     TZ=UTC \
     LC_ALL=C.UTF-8 \
     LANG=C.UTF-8 \
@@ -16,26 +20,26 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
-COPY devops/locks/python-3.12-requirements.lock.txt /tmp/requirements.lock.txt
+COPY --chown=root:root devops/locks/python-3.12-requirements.lock.txt /tmp/requirements.lock.txt
 RUN pip install --no-cache-dir -r /tmp/requirements.lock.txt && \
     find /usr/local/lib/python3.12/site-packages -exec touch -t 197001010000.00 {} + 2>/dev/null || true && \
     find /usr/local/bin -exec touch -t 197001010000.00 {} + 2>/dev/null || true
 
-COPY api.py .
-COPY main.py .
-COPY middleware.py .
-COPY weight_encryptor.py .
-COPY thalos_db_schema.sql .
-COPY manual_validation.py .
-COPY config.py .
-COPY logging_config.py .
-COPY security.py .
-COPY metrics.py .
-COPY feedback.py .
-COPY auth_utils.py .
-COPY infra_status.py .
-COPY mnn_pipeline/ ./mnn_pipeline/
-COPY mnn/ ./mnn/
+COPY --chown=root:root api.py .
+COPY --chown=root:root main.py .
+COPY --chown=root:root middleware.py .
+COPY --chown=root:root weight_encryptor.py .
+COPY --chown=root:root thalos_db_schema.sql .
+COPY --chown=root:root manual_validation.py .
+COPY --chown=root:root config.py .
+COPY --chown=root:root logging_config.py .
+COPY --chown=root:root security.py .
+COPY --chown=root:root metrics.py .
+COPY --chown=root:root feedback.py .
+COPY --chown=root:root auth_utils.py .
+COPY --chown=root:root infra_status.py .
+COPY --chown=root:root mnn_pipeline/ ./mnn_pipeline/
+COPY --chown=root:root mnn/ ./mnn/
 
 EXPOSE 8000
 

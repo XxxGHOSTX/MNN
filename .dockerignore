@@ -48,6 +48,7 @@ ENV/
 Dockerfile
 docker-compose.yml
 .dockerignore
+docker-build/
 
 # Temporary files
 *.log
@@ -62,3 +63,12 @@ include/
 src/mnn_core.cpp
 *.o
 *.a
+
+# Logs and runtime outputs (vary between runs)
+logs/
+memory/
+
+# Devops scripts (not part of the application)
+devops/
+scripts/
+tools/

@@ -6,11 +6,15 @@ IMAGE_B="mnn-hermetic:build-b"
 DOCKERFILE="devops/docker/Dockerfile.hermetic"
 
 echo "[repro] Building first image (${IMAGE_A})"
-docker build --no-cache --provenance=false --sbom=false -f "${DOCKERFILE}" -t "${IMAGE_A}" .
+docker build --no-cache --provenance=false --sbom=false \
+  --build-arg SOURCE_DATE_EPOCH=0 \
+  -f "${DOCKERFILE}" -t "${IMAGE_A}" .
 ID_A=$(docker image inspect "${IMAGE_A}" --format '{{.Id}}')
 
 echo "[repro] Building second image (${IMAGE_B})"
-docker build --no-cache --provenance=false --sbom=false -f "${DOCKERFILE}" -t "${IMAGE_B}" .
+docker build --no-cache --provenance=false --sbom=false \
+  --build-arg SOURCE_DATE_EPOCH=0 \
+  -f "${DOCKERFILE}" -t "${IMAGE_B}" .
 ID_B=$(docker image inspect "${IMAGE_B}" --format '{{.Id}}')
 
 echo "[repro] IMAGE_A=${ID_A}"

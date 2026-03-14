@@ -1,53 +1,55 @@
 # Production-ready Dockerfile for MNN Pipeline FastAPI service
-FROM python:3.12-slim
+FROM python:3.12.8-slim-bookworm
+
+LABEL org.opencontainers.image.created=1970-01-01T00:00:00Z
+
+# Build arguments for reproducible builds and optional configuration
+ARG SOURCE_DATE_EPOCH=0
+ARG THALOS_DB_DSN=""
+ARG THALOS_DB_CONNECT_TIMEOUT="10"
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
-
-# Build arguments for optional configuration
-ARG THALOS_DB_DSN=""
-ARG THALOS_DB_CONNECT_TIMEOUT="10"
-
-# Set environment variables from build args (can be overridden at runtime)
-ENV THALOS_DB_DSN=${THALOS_DB_DSN} \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH} \
+    THALOS_DB_DSN=${THALOS_DB_DSN} \
     THALOS_DB_CONNECT_TIMEOUT=${THALOS_DB_CONNECT_TIMEOUT}
 
 # Set working directory
 WORKDIR /app
 
 # Copy requirements first for better layer caching
-COPY requirements.txt .
+COPY --chown=root:root requirements.txt .
 
 # Install Python dependencies
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends curl && \
+    apt-get install -y --no-install-recommends curl=7.88.1-10+deb12u8 && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \
     pip install --no-cache-dir -r requirements.txt
 
 # Copy application files
-COPY api.py .
-COPY main.py .
-COPY middleware.py .
-COPY weight_encryptor.py .
-COPY thalos_db_schema.sql .
-COPY manual_validation.py .
-COPY config.py .
-COPY logging_config.py .
-COPY security.py .
-COPY metrics.py .
-COPY feedback.py .
-COPY auth_utils.py .
-COPY infra_status.py .
+COPY --chown=root:root api.py .
+COPY --chown=root:root main.py .
+COPY --chown=root:root middleware.py .
+COPY --chown=root:root weight_encryptor.py .
+COPY --chown=root:root thalos_db_schema.sql .
+COPY --chown=root:root manual_validation.py .
+COPY --chown=root:root config.py .
+COPY --chown=root:root logging_config.py .
+COPY --chown=root:root security.py .
+COPY --chown=root:root metrics.py .
+COPY --chown=root:root feedback.py .
+COPY --chown=root:root auth_utils.py .
+COPY --chown=root:root infra_status.py .
 
 # Copy mnn_pipeline directory
-COPY mnn_pipeline/ ./mnn_pipeline/
+COPY --chown=root:root mnn_pipeline/ ./mnn_pipeline/
 
 # Copy mnn package
-COPY mnn/ ./mnn/
+COPY --chown=root:root mnn/ ./mnn/
 
 # Expose FastAPI port
 EXPOSE 8000
