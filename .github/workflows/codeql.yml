@@ -30,7 +30,14 @@ jobs:
           languages: ${{ matrix.language }}
 
       - name: Autobuild
+        if: matrix.language != 'cpp'
         uses: github/codeql-action/autobuild@v3
+
+      - name: Build C++ for CodeQL
+        if: matrix.language == 'cpp'
+        run: |
+          g++ -std=c++17 -Iinclude -c src/mnn_core.cpp -o /tmp/mnn_core_codeql.o
+          g++ -std=c++17 -Iinclude -c src/deterministic_state.cpp -o /tmp/deterministic_state_codeql.o
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
