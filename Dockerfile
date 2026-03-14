@@ -46,6 +46,9 @@ COPY infra_status.py .
 # Copy mnn_pipeline directory
 COPY mnn_pipeline/ ./mnn_pipeline/
 
+# Copy mnn package
+COPY mnn/ ./mnn/
+
 # Expose FastAPI port
 EXPOSE 8000
 
