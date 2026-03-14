@@ -1,45 +1,98 @@
-# MNN Thalos Prime Completeness — SMOKE-LOG
-# Generated: 2026-03-14T17:03:40Z
+# MNN Thalos Prime Completeness — SMOKE-LOG TEMPLATE
+# This file is a human-maintained checklist. Do **not** paste raw tool output here.
+# For detailed logs and reports, use a dedicated artifacts directory (for example: `logs/` or `test_reports/`).
 
-## 1. Lint (make lint)
-```
-Listing './tools'...
-Listing './verification'...
-Linting complete - no syntax errors found.
-```
-Status: PASS
+## 1. Lint
 
-## 2. Test suite (pytest — 377 passed, 8 skipped)
-```
-377 passed, 8 skipped, 3 warnings in 3.14s
-```
-Status: PASS
+Command: `make lint`
+
+Expected outcome:
+- All tracked source files lint clean.
+- No new warnings of interest.
+
+Notes (update manually as needed):
+- Last verified on: `<YYYY-MM-DD>`
+- Lint summary: `<short description, no full log>`
+
+Status: PASS | FAIL
+
+---
+
+## 2. Test suite
+
+Command (example): `pytest`
+
+Expected outcome:
+- All mandatory tests pass.
+- Any skips are intentional and documented.
+
+Notes (update manually as needed):
+- Last verified on: `<YYYY-MM-DD>`
+- Approximate result: `<e.g., "All tests passed"; avoid exact counts/timings here>`
+- Detailed output: see `test_reports/` or CI artifacts.
+
+Status: PASS | FAIL
+
+---
 
 ## 3. Coverage (≥80% threshold)
-```
-TOTAL                                   2795    515    82%
-Required test coverage of 80.0% reached. Total coverage: 81.57%
-```
-Status: PASS (81.57%)
+
+Command (example): `pytest --cov` or `coverage run -m pytest && coverage report`
+
+Expected outcome:
+- Global coverage is at or above the configured threshold (currently ≥80%).
+
+Notes (update manually as needed):
+- Last verified on: `<YYYY-MM-DD>`
+- Coverage summary: `<e.g., "Threshold met"; avoid exact percentages here>`
+- Detailed report: see `test_reports/coverage/`.
+
+Status: PASS | FAIL
+
+---
 
 ## 4. C++ sanity compile
-```
-mnn_core.cpp: OK
-deterministic_state.cpp: OK
-```
-Status: PASS
+
+Command (example):
+- `g++ -std=c++17 -Iinclude -c src/mnn_core.cpp`
+- Add any additional sanity-compile commands as needed.
+
+Expected outcome:
+- All listed translation units compile without errors on the reference toolchain.
+
+Notes (update manually as needed):
+- Last verified on: `<YYYY-MM-DD>`
+- Toolchain: `<e.g., gcc 13.2, clang 17, etc.>`
+
+Status: PASS | FAIL
+
+---
 
 ## 5. Prohibited markers sweep
-```
-No prohibited markers found in source files.
-```
-Status: PASS
 
-## Summary
-| Gate | Status |
-|------|--------|
-| Lint | ✅ PASS |
-| Tests (377 passed, 8 skipped) | ✅ PASS |
-| Coverage (81.57%) | ✅ PASS |
-| C++ compile | ✅ PASS |
-| Prohibited markers | ✅ NONE |
+Command (example): `python tools/prohibited_markers_scan.py` (or equivalent)
+
+Expected outcome:
+- No prohibited markers or debug artefacts found in tracked sources.
+
+Notes (update manually as needed):
+- Last verified on: `<YYYY-MM-DD>`
+- Summary: `<e.g., "No prohibited markers found">`
+
+Status: PASS | FAIL
+
+---
+
+## Summary (update manually)
+
+| Gate                    | Status     | Last Verified |
+|-------------------------|-----------|---------------|
+| Lint                    | PASS/FAIL | `<YYYY-MM-DD>` |
+| Tests                   | PASS/FAIL | `<YYYY-MM-DD>` |
+| Coverage (≥80%)         | PASS/FAIL | `<YYYY-MM-DD>` |
+| C++ compile             | PASS/FAIL | `<YYYY-MM-DD>` |
+| Prohibited markers      | PASS/FAIL | `<YYYY-MM-DD>` |
+
+> Guidance: Keep this file as a lightweight, manually curated summary.
+> Avoid committing full logs, timestamps, and exact metrics here; instead, store
+> detailed, volatile run outputs under `logs/`, `test_reports/`, or CI artifacts.
