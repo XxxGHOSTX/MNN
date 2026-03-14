@@ -1,43 +1,99 @@
-name: CodeQL
+name: "CodeQL Advanced"
 
 on:
   push:
-    branches: [main]
+    branches: [ "main" ]
   pull_request:
-    branches: [main]
-
-permissions:
-  actions: read
-  contents: read
-  security-events: write
+    branches: [ "main" ]
+  schedule:
+    - cron: '17 21 * * 0'
 
 jobs:
   analyze:
-    name: Analyze
-    runs-on: ubuntu-latest
+    name: Analyze (${{ matrix.language }})
+    runs-on: ${{ (matrix.language == 'swift' && 'macos-latest') || 'ubuntu-latest' }}
+
+    permissions:
+      security-events: write
+      packages: read
+      actions: read
+      contents: read
+
     strategy:
       fail-fast: false
       matrix:
-        language: ["python", "cpp", "javascript"]
+        include:
+          # GitHub Actions workflows
+          - language: actions
+            build-mode: none
+
+          # C++ core (for your C/C++ parts)
+          - language: c-cpp
+            build-mode: autobuild
+
+          # Frontend (JavaScript in frontend/)
+          - language: javascript-typescript
+            build-mode: none
+
+          # Python engine
+          - language: python
+            build-mode: none
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install C/C++ toolchain
+        if: matrix.language == 'c-cpp'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential
+
+      - name: Install Python dependencies
+        if: matrix.language == 'python'
+        run: |
+          if [ -f requirements.txt ]; then
+            pip install --upgrade pip
+            pip install -r requirements.txt
+          fi
+
+      - name: Install frontend dependencies
+        if: matrix.language == 'javascript-typescript'
+        working-directory: frontend
+        run: |
+          if [ -f package-lock.json ] || [ -f package.json ]; then
+            npm install
+          fi
+
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+          # To enable more checks, uncomment the next line:
+          # queries: +security-extended,security-and-quality
 
-      - name: Autobuild
-        if: matrix.language != 'cpp'
-        uses: github/codeql-action/autobuild@v3
-
-      - name: Build C++ for CodeQL
-        if: matrix.language == 'cpp'
+      - name: Run manual build steps
+        if: matrix.build-mode == 'manual'
+        shell: bash
         run: |
-          g++ -std=c++17 -Iinclude -c src/mnn_core.cpp -o /tmp/mnn_core_codeql.o
-          g++ -std=c++17 -Iinclude -c src/deterministic_state.cpp -o /tmp/deterministic_state_codeql.o
+          echo 'build-mode is "manual" but no build commands are configured.'
+          echo 'Replace this step with real build commands if you switch a language to manual.'
+          exit 1
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: "/language:${{ matrix.language }}"
