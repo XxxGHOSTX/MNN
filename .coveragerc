@@ -2,8 +2,6 @@
 omit =
     demo_mnn.py
     manual_validation.py
-    main.py
-    mnn/main.py
     tools/deterministic_benchmark.py
     tools/find_coherent_page.py
     tools/generate_architecture_artifacts.py
