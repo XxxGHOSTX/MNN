@@ -25,7 +25,7 @@ COPY --chown=root:root requirements.txt .
 
 # Install Python dependencies
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends curl=7.88.1-10+deb12u8 && \
+    apt-get install -y --no-install-recommends curl && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \
     pip install --no-cache-dir -r requirements.txt
