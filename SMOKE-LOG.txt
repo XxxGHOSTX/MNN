@@ -1,0 +1,45 @@
+# MNN Thalos Prime Completeness — SMOKE-LOG
+# Generated: 2026-03-14T17:03:40Z
+
+## 1. Lint (make lint)
+```
+Listing './tools'...
+Listing './verification'...
+Linting complete - no syntax errors found.
+```
+Status: PASS
+
+## 2. Test suite (pytest — 377 passed, 8 skipped)
+```
+377 passed, 8 skipped, 3 warnings in 3.14s
+```
+Status: PASS
+
+## 3. Coverage (≥80% threshold)
+```
+TOTAL                                   2795    515    82%
+Required test coverage of 80.0% reached. Total coverage: 81.57%
+```
+Status: PASS (81.57%)
+
+## 4. C++ sanity compile
+```
+mnn_core.cpp: OK
+deterministic_state.cpp: OK
+```
+Status: PASS
+
+## 5. Prohibited markers sweep
+```
+No prohibited markers found in source files.
+```
+Status: PASS
+
+## Summary
+| Gate | Status |
+|------|--------|
+| Lint | ✅ PASS |
+| Tests (377 passed, 8 skipped) | ✅ PASS |
+| Coverage (81.57%) | ✅ PASS |
+| C++ compile | ✅ PASS |
+| Prohibited markers | ✅ NONE |
