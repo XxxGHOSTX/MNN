@@ -476,6 +476,26 @@ python -m pytest tests/test_pipeline.py -v
 python -m pytest tests/test_babel_siphon.py -v
 ```
 
+### Safety & Security Checks
+
+```bash
+# Dependency vulnerability audit (requires pip-audit)
+pip install pip-audit
+pip-audit
+
+# Verify no known-vulnerable packages are installed:
+pip-audit --format json -o sbom-audit.json
+
+# HTML sanitisation (bleach must be imported where user HTML is processed):
+python -c "import bleach; print(bleach.__version__)"
+```
+
+> **Note on CodeQL**: The `.github/workflows/codeql.yml` workflow runs CodeQL
+> analysis on every push and pull request.  To avoid SARIF upload conflicts,
+> ensure that GitHub's built-in "Default setup" for Code Scanning is **disabled**
+> in repository Settings → Code security and analysis → Code scanning.
+> See [`DECISION.md`](DECISION.md) for full details.
+
 ### Verify (lint + test + C++ sanity compile)
 
 ```bash

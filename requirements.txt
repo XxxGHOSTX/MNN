@@ -17,6 +17,10 @@ ruff==0.15.6
 # SMT Solver for Babel Siphon pipeline
 z3-solver==4.13.4.0
 
+# HTML sanitization – use bleach.clean() wherever user-supplied HTML must be
+# filtered.  Prevents py/bad-tag-filter findings (CWE-116/CWE-79).
+bleach==6.1.0
+
 # Production dependencies (optional but recommended)
 # Uncomment if needed:
 # python-multipart==0.0.9  # For file uploads

@@ -21,11 +21,15 @@ Example:
 Author: MNN Engine Contributors
 """
 
+import logging
+
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 from typing import List, Dict
 
 from .pipeline import run_pipeline
+
+logger = logging.getLogger(__name__)
 
 
 # FastAPI app instance
@@ -128,18 +132,20 @@ async def query_endpoint(request: QueryRequest) -> QueryResponse:
         try:
             normalized_query = normalize_query(query)
         except ValueError as e:
+            logger.warning("Query normalization failed", exc_info=True)
             raise HTTPException(
                 status_code=400,
-                detail=f"Query normalization failed: {str(e)}"
+                detail="Query normalization failed: invalid query string."
             )
         
         # Run pipeline (cached)
         try:
             ranked_results = run_pipeline(query)
         except ValueError as e:
+            logger.warning("Pipeline value error for query", exc_info=True)
             raise HTTPException(
                 status_code=400,
-                detail=f"Pipeline error: {str(e)}"
+                detail="Pipeline could not process the query."
             )
         
         # Convert to response format
@@ -161,9 +167,11 @@ async def query_endpoint(request: QueryRequest) -> QueryResponse:
     except HTTPException:
         # Re-raise HTTP exceptions
         raise
-    except Exception as e:
-        # Catch any unexpected errors
+    except Exception:
+        # Log the full exception internally; return a generic message to the client
+        # to prevent stack-trace/detail exposure (CWE-209 / py/stack-trace-exposure).
+        logger.error("Unexpected error in query endpoint", exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail=f"Internal server error: {str(e)}"
+            detail="An internal error occurred. Please try again later."
         )

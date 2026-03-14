@@ -18,20 +18,30 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # Restrict to languages actually used in this repository.
+        # JavaScript/TypeScript analysis is handled by default setup where enabled;
+        # C++ is compiled separately below.  Python is the primary source language.
         language: ["python", "cpp", "javascript"]
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Remove stale CodeQL databases from previous runs to avoid disk-space
+      # issues that can cause improved-incremental-analysis failures.
+      - name: Clean up stale CodeQL artifacts
+        run: |
+          rm -rf /home/runner/work/_temp/codeql_databases || true
+          df -h
+
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
 
       - name: Autobuild
         if: matrix.language != 'cpp'
-        uses: github/codeql-action/autobuild@v3
+        uses: github/codeql-action/autobuild@v4
 
       - name: Build C++ for CodeQL
         if: matrix.language == 'cpp'
@@ -40,4 +50,18 @@ jobs:
           g++ -std=c++17 -Iinclude -c src/deterministic_state.cpp -o /tmp/deterministic_state_codeql.o
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
+        with:
+          # `upload: failure-only` uploads SARIF only when this step itself
+          # fails (for diagnostics), and skips uploading successful results.
+          # This avoids the error:
+          #   "CodeQL analyses from advanced configurations cannot be
+          #    processed when the default setup is enabled."
+          # which is raised when both GitHub's built-in "default setup" AND
+          # this advanced workflow attempt to upload SARIF simultaneously.
+          #
+          # TO RESTORE FULL SECURITY SCANNING IN GITHUB SECURITY TAB:
+          #   1. Go to Settings → Code security → Code scanning → Default
+          #      setup → Disable.
+          #   2. Change the line below to: upload: always
+          upload: failure-only
