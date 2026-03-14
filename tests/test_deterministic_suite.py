@@ -8,6 +8,7 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 from api import app, _get_auth_secret
+from config import config as app_config
 from mnn.deterministic.audit import HashChainAuditLogger, replay_and_validate_log
 from mnn.deterministic.basile import coordinate_to_base29, generate_basile_volume
 from mnn.deterministic.corpus import DeterministicCorpusEngine
@@ -116,8 +117,9 @@ def test_api_deterministic_endpoints(tmp_path: Path):
     assert generated.status_code == 200
     output_hash = generated.json()["output_hash"]
 
-    log_path = Path("/app/logs/deterministic/test_replay_endpoint.jsonl")
-    log_path.parent.mkdir(parents=True, exist_ok=True)
+    log_dir = Path(app_config.DETERMINISTIC_AUDIT_LOG_PATH).parent
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_path = log_dir / "test_replay_endpoint.jsonl"
     entries = [
         {
             "event_id": "init",
