@@ -201,5 +201,5 @@ fmt:
 		ruff check --fix api.py auth_utils.py config.py feedback.py logging_config.py metrics.py middleware.py security.py main.py mnn/ mnn_pipeline/ tools/ tests/ && \
 		echo "Formatting complete."; \
 	else \
-		python -m compileall api.py auth_utils.py config.py feedback.py logging_config.py metrics.py middleware.py security.py main.py mnn/ mnn_pipeline/ tools/ tests/ -q && echo "ruff not installed; syntax check passed. Install ruff for full formatting."; \
+		python -m compileall api.py auth_utils.py config.py feedback.py logging_config.py metrics.py middleware.py security.py main.py mnn/ mnn_pipeline/ tools/ tests/ -q && echo "ruff not installed; syntax check passed. Install ruff (e.g., 'pip install ruff') for full formatting."; \
 	fi
