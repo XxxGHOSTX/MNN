@@ -197,7 +197,9 @@ clean:
 fmt:
 	@echo "Running ruff format and auto-fix..."
 	@if command -v ruff >/dev/null 2>&1; then \
-		ruff format . && ruff check --fix . && echo "Formatting complete."; \
+		ruff format . --exclude venv --exclude .venv --exclude build --exclude dist && \
+		ruff check --fix . --exclude venv --exclude .venv --exclude build --exclude dist && \
+		echo "Formatting complete."; \
 	else \
 		python -m compileall . -x '^\./frontend/' -q && echo "ruff not installed; syntax check passed. Install ruff for full formatting."; \
 	fi
