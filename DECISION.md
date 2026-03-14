@@ -5,52 +5,32 @@ CI failures and hardening the codebase.
 
 ---
 
-## 1  CodeQL workflow: upgrade to `codeql-action@v4`
+## 1  CodeQL workflow: upgrade to "CodeQL Advanced" with `codeql-action@v4`
 
-**Decision**: Replace `github/codeql-action/{init,autobuild,analyze}@v3` with
-`@v4`.
+**Decision**: Replace the previous `CodeQL` workflow with the "CodeQL Advanced"
+configuration provided by the repository owner.  Key changes:
 
-**Reason**: The v3 actions run on Node.js 20, which GitHub Actions is
-deprecating (forced migration to Node.js 24 begins 2026-06-02).  Upgrading to
-v4 removes the deprecation warning and ensures continued support.
+- **Renamed** to `"CodeQL Advanced"` to align with GitHub's recommended template.
+- **Actions upgraded** from v3 (Node.js 20) to v4 (Node.js 24).
+- **Matrix restructured** to use `include:` with explicit `build-mode` per language,
+  covering `actions`, `c-cpp`, `javascript-typescript`, and `python`.
+- **Scheduled run** added (`cron: '17 21 * * 0'`) for weekly background scans.
+- **Language identifiers updated** to current CodeQL names: `c-cpp` (was `cpp`),
+  `javascript-typescript` (was `javascript`).
+- **Setup steps added** per-language: `actions/setup-node@v4` (Node 22),
+  `actions/setup-python@v5` (Python 3.11), build-essential for C/C++, pip and
+  npm dependency installation.
+- **`category` parameter added** to `analyze` step to correctly namespace SARIF
+  results per language in the GitHub Security tab.
+- **`upload: failure-only` removed** – the default (`always`) is restored now
+  that the repository owner has disabled the built-in "Default setup" in
+  repository settings, which was causing the previous SARIF rejection.
 
----
-
-## 2  Add a "Clean up stale CodeQL artifacts" step
-
-**Decision**: Add `rm -rf /home/runner/work/_temp/codeql_databases || true` as
-the first workflow step.
-
-**Reason**: The CI logs showed:
-> "Improved incremental analysis was skipped because it previously failed for
-> this repository with CodeQL version 2.24.3 on a runner with similar hardware
-> resources.  One possible reason for this is that improved incremental
-> analysis can require a significant amount of disk space."
-
-Removing the stale database directory before each run prevents accumulation of
-previous artifacts and gives the incremental-analysis step a fresh start.
-
----
-
-## 3  Use `upload: failure-only` on the `analyze` step
-
-**Decision**: Set `upload: failure-only` on `codeql-action/analyze`.
-
-**Reason**: The primary SARIF upload failure was:
-> "CodeQL analyses from advanced configurations cannot be processed when the
-> default setup is enabled."
-
-This error occurs when the repository's built-in "default setup" (Settings →
-Code security → Code scanning → Default setup) is active **at the same time**
-as the workflow-based advanced setup.
-
-`upload: failure-only` prevents a hard failure while the repository owner
-evaluates / turns off the default setup.  Once default setup is disabled, the
-value can be changed back to the default (`always`) to restore full SARIF
-reporting.
-
-**Required manual action**: Disable "Default setup" in repository settings
-(Settings → Code security and analysis → Code scanning → Default setup → Off).
+**Reason**: The v3 actions run on deprecated Node.js 20.  The new matrix format
+is more readable, and the added setup steps ensure dependencies are available
+during extraction.  The `category` parameter is required for multi-language
+advanced setups to correctly deduplicate findings per language in the
+Security tab.
 
 ---
 
