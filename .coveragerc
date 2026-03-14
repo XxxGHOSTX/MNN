@@ -1,0 +1,18 @@
+[run]
+omit =
+    demo_mnn.py
+    manual_validation.py
+    tools/deterministic_benchmark.py
+    tools/find_coherent_page.py
+    tools/generate_architecture_artifacts.py
+    tools/process_corpus.py
+    tools/reproducibility_check.py
+    tools/thalos_cli.py
+    tools/verify.py
+    tools/verify_lifecycle_formal.py
+    */test_*
+    tests/*
+    mnn/tests/*
+
+[report]
+fail_under = 80

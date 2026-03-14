@@ -23,7 +23,7 @@ help:
 	@echo "cross-language-rng-check - Verify Python/C++ deterministic descriptor parity"
 	@echo "benchmark-deterministic - Run deterministic benchmark and drift check"
 	@echo "clean          - Clean build artifacts and caches"
-	@echo "fmt            - Format code (stub - no formatter configured)"
+	@echo "fmt            - Format code with ruff (lint + auto-fix)"
 
 # Provision the environment (deterministic setup from a clean clone)
 setup: install
@@ -193,7 +193,13 @@ clean:
 	@rm -rf build/ dist/ .coverage htmlcov/ 2>/dev/null || true
 	@echo "Clean complete."
 
-# Format code (stub)
+# Format code with ruff (lint + auto-fix)
 fmt:
-	@echo "Code formatting stub - no formatter configured."
-	@echo "To add formatting, install black or ruff and update this target."
+	@echo "Running ruff format and auto-fix..."
+	@if command -v ruff >/dev/null 2>&1; then \
+		ruff format api.py auth_utils.py config.py feedback.py logging_config.py metrics.py middleware.py security.py main.py mnn/ mnn_pipeline/ tools/ tests/ && \
+		ruff check --fix api.py auth_utils.py config.py feedback.py logging_config.py metrics.py middleware.py security.py main.py mnn/ mnn_pipeline/ tools/ tests/ && \
+		echo "Formatting complete."; \
+	else \
+		python -m compileall api.py auth_utils.py config.py feedback.py logging_config.py metrics.py middleware.py security.py main.py mnn/ mnn_pipeline/ tools/ tests/ -q && echo "ruff not installed; syntax check passed. Install ruff (e.g., 'pip install ruff') for full formatting."; \
+	fi
