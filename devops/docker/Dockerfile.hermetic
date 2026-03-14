@@ -17,7 +17,9 @@ ENV PYTHONUNBUFFERED=1 \
 WORKDIR /app
 
 COPY devops/locks/python-3.12-requirements.lock.txt /tmp/requirements.lock.txt
-RUN pip install --no-cache-dir -r /tmp/requirements.lock.txt
+RUN pip install --no-cache-dir -r /tmp/requirements.lock.txt && \
+    find /usr/local/lib/python3.12/site-packages -exec touch -t 197001010000.00 {} + 2>/dev/null || true && \
+    find /usr/local/bin -exec touch -t 197001010000.00 {} + 2>/dev/null || true
 
 COPY api.py .
 COPY main.py .
@@ -33,6 +35,7 @@ COPY feedback.py .
 COPY auth_utils.py .
 COPY infra_status.py .
 COPY mnn_pipeline/ ./mnn_pipeline/
+COPY mnn/ ./mnn/
 
 EXPOSE 8000
 
