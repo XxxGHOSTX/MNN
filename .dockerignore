@@ -70,5 +70,6 @@ memory/
 
 # Devops scripts (not part of the application)
 devops/
+!devops/locks/python-3.12-requirements.lock.txt
 scripts/
 tools/
