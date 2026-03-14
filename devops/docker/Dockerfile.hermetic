@@ -21,8 +21,9 @@ ENV PYTHONUNBUFFERED=1 \
 WORKDIR /app
 
 COPY --chown=root:root devops/locks/python-3.12-requirements.lock.txt /tmp/requirements.lock.txt
-RUN pip install --no-cache-dir -r /tmp/requirements.lock.txt && \
-    find /usr/local/lib/python3.12/site-packages -exec touch -t 197001010000.00 {} + 2>/dev/null || true && \
+RUN pip install --no-cache-dir --no-compile -r /tmp/requirements.lock.txt && \
+    rm -rf /tmp/pip-* /root/.cache/pip && \
+    find /usr/local/lib/python3.12 -exec touch -t 197001010000.00 {} + 2>/dev/null || true && \
     find /usr/local/bin -exec touch -t 197001010000.00 {} + 2>/dev/null || true
 
 COPY --chown=root:root api.py .
