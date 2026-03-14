@@ -61,3 +61,7 @@ verification_report.json
 query_history.log
 .env
 
+# Frontend build output
+frontend/dist/
+frontend/node_modules/
+
