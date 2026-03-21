@@ -55,7 +55,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'npm'
+          cache: 'yarn'
+          cache-dependency-path: frontend/yarn.lock
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -83,8 +84,8 @@ jobs:
         if: matrix.language == 'javascript-typescript'
         working-directory: frontend
         run: |
-          if [ -f package-lock.json ] || [ -f package.json ]; then
-            npm install
+          if [ -f yarn.lock ] || [ -f package.json ]; then
+            yarn install --frozen-lockfile
           fi
 
       # --- Initialize CodeQL ---
